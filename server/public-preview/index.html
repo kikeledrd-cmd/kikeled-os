@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Kikeled OS</title>
+    <style>
+      :root { color: #f3f5f8; background: #06070a; font-family: Inter, ui-sans-serif, system-ui, Arial, sans-serif; }
+      * { box-sizing: border-box; }
+      body { margin: 0; background: radial-gradient(circle at 20% 0%, rgba(34,211,238,.16), transparent 28%), radial-gradient(circle at 90% 10%, rgba(244,63,94,.12), transparent 30%), #06070a; }
+      a { color: inherit; text-decoration: none; }
+      header { position: sticky; top: 0; z-index: 5; border-bottom: 1px solid rgba(255,255,255,.1); background: rgba(6,7,10,.88); backdrop-filter: blur(14px); }
+      nav, section, footer { max-width: 1180px; margin: auto; padding: 0 22px; }
+      nav { min-height: 74px; display: flex; align-items: center; justify-content: space-between; gap: 18px; }
+      .brand { font-weight: 800; letter-spacing: .18em; text-transform: uppercase; }
+      .navlinks { display: flex; gap: 18px; color: #aab3c2; font-size: 14px; }
+      .btn { display: inline-flex; align-items: center; justify-content: center; border-radius: 16px; padding: 12px 16px; font-weight: 700; font-size: 14px; }
+      .primary { background: white; color: #070910; }
+      .secondary { border: 1px solid rgba(255,255,255,.12); background: rgba(255,255,255,.06); color: white; }
+      .hero { min-height: calc(100vh - 74px); display: grid; grid-template-columns: 1.05fr .95fr; align-items: center; gap: 40px; padding-top: 54px; padding-bottom: 54px; border-bottom: 1px solid rgba(255,255,255,.1); }
+      .label { color: #9fb3c8; text-transform: uppercase; letter-spacing: .22em; font-size: 12px; font-weight: 700; }
+      h1 { margin: 18px 0 0; font-size: clamp(44px, 7vw, 78px); line-height: .96; letter-spacing: 0; }
+      h2 { margin: 12px 0 0; font-size: clamp(32px, 4vw, 54px); line-height: 1.03; }
+      p { color: #aab3c2; line-height: 1.75; }
+      .actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 28px; }
+      .visual, .card { border: 1px solid rgba(255,255,255,.1); background: rgba(255,255,255,.06); border-radius: 24px; }
+      .visual { position: relative; overflow: hidden; padding: 24px; min-height: 460px; }
+      .visual:before { content: ""; position: absolute; inset: 0; background: radial-gradient(circle at 22% 20%, rgba(34,211,238,.26), transparent 26%), radial-gradient(circle at 78% 38%, rgba(244,63,94,.2), transparent 26%), radial-gradient(circle at 45% 88%, rgba(132,204,22,.14), transparent 28%); }
+      .visual > div { position: relative; }
+      .glowbox { border: 1px solid rgba(103,232,249,.22); background: rgba(0,0,0,.42); border-radius: 20px; padding: 24px; }
+      .grid { display: grid; gap: 18px; }
+      .services { grid-template-columns: repeat(3, 1fr); }
+      .products { grid-template-columns: repeat(3, 1fr); }
+      .section { padding-top: 72px; padding-bottom: 72px; }
+      .card { padding: 22px; }
+      .price { color: white; font-size: 24px; font-weight: 800; margin-top: 18px; }
+      form { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+      input, select, textarea { width: 100%; border: 1px solid rgba(255,255,255,.12); background: rgba(255,255,255,.06); border-radius: 16px; padding: 13px 14px; color: white; outline: none; }
+      option { color: #111827; }
+      textarea, .wide { grid-column: 1 / -1; }
+      footer { padding-top: 30px; padding-bottom: 30px; border-top: 1px solid rgba(255,255,255,.1); color: #aab3c2; }
+      @media (max-width: 900px) { .hero, .services, .products, form { grid-template-columns: 1fr; } .navlinks { display: none; } h1 { font-size: 46px; } }
+    </style>
+  </head>
+  <body>
+    <header>
+      <nav>
+        <a class="brand" href="#">Kikeled OS</a>
+        <div class="navlinks">
+          <a href="#catalogo">Catalogo</a>
+          <a href="#cotizar">Cotizar</a>
+          <a href="/api/health">API</a>
+        </div>
+        <a class="btn primary" href="#cotizar">Cotizar</a>
+      </nav>
+    </header>
+
+    <section class="hero">
+      <div>
+        <div class="label">Kikeled Letreros Publicitarios</div>
+        <h1>Letreros que convierten tu marca en una presencia imposible de ignorar.</h1>
+        <p>Convertimos logos e ideas en piezas luminosas listas para vender, decorar y destacar en Republica Dominicana.</p>
+        <div class="actions">
+          <a class="btn primary" href="#cotizar">Cotizar mi letrero</a>
+          <a class="btn secondary" href="#catalogo">Ver catalogo</a>
+        </div>
+      </div>
+      <div class="visual">
+        <div class="glowbox">
+          <div class="label">RGB Control</div>
+          <h2>Logo plano a pieza LED.</h2>
+          <p>Diseno, fabricacion, prueba, entrega y contenido quedan conectados al sistema operativo de Kikeled.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="label">Servicios</div>
+      <h2>Todo lo que un negocio necesita para verse mas profesional.</h2>
+      <div class="grid services" style="margin-top:28px">
+        <div class="card"><h3>Letreros luminosos</h3><p>Acrilico LED, cajas de luz, neon flex, troquelados y fachadas 3D.</p></div>
+        <div class="card"><h3>Produccion y montaje</h3><p>Del logo y medidas hasta fabricacion, prueba, instalacion y entrega.</p></div>
+        <div class="card"><h3>Contenido y ventas</h3><p>Reels, ADS, cotizaciones y seguimiento comercial por WhatsApp.</p></div>
+      </div>
+    </section>
+
+    <section class="section" id="catalogo">
+      <div class="label">Catalogo</div>
+      <h2>Productos iniciales</h2>
+      <div class="grid products" style="margin-top:28px" id="products"></div>
+    </section>
+
+    <section class="section" id="cotizar">
+      <div class="label">Cotizar</div>
+      <h2>Envia tu logo y creamos la solicitud en Kikeled OS.</h2>
+      <form id="leadForm" style="margin-top:28px">
+        <input name="name" placeholder="Nombre" required />
+        <input name="whatsapp" placeholder="WhatsApp" required />
+        <input name="phone" placeholder="Telefono" required />
+        <input name="email" type="email" placeholder="Correo" required />
+        <input name="business" placeholder="Negocio o marca" required />
+        <input name="city" placeholder="Ciudad" required />
+        <input class="wide" name="address" placeholder="Direccion o zona" required />
+        <select name="businessType" required><option value="">Tipo de negocio</option><option>Restaurante</option><option>Barberia</option><option>Salon</option><option>Tienda</option><option>Oficina</option><option>Gaming/streaming</option><option>Otro</option></select>
+        <select name="interestType" required id="productSelect"></select>
+        <input name="measures" placeholder="Medidas aproximadas" required />
+        <input name="estimatedBudget" type="number" min="0" placeholder="Presupuesto RD$" required />
+        <select class="wide" name="urgency" required><option value="">Urgencia</option><option>Normal</option><option>Esta semana</option><option>Urgente</option><option>Solo explorando</option></select>
+        <textarea name="description" rows="5" placeholder="Describe el proyecto" required></textarea>
+        <input class="wide" name="referenceFile" type="file" accept="image/*,.pdf" />
+        <button class="btn primary wide" type="submit">Crear solicitud</button>
+      </form>
+      <p id="formStatus"></p>
+    </section>
+
+    <footer>Kikeled Studio SRL · Preview Express mientras Vite esta bloqueado en este entorno.</footer>
+
+    <script>
+      const products = [
+        ['Letrero circular LED', 4500], ['Letrero troquelado', 3800], ['Caja de luz', 9500],
+        ['Panaflex', 6500], ['Acrilico LED', 7200], ['Letrero corporativo', 8000],
+        ['Fachada 3D', 18000], ['Neon flex', 5500], ['Vinil', 1800], ['Gaming RGB', 5000]
+      ];
+      const productGrid = document.getElementById('products');
+      const productSelect = document.getElementById('productSelect');
+      productSelect.innerHTML = '<option value="">Servicio solicitado</option>' + products.map(([name]) => `<option>${name}</option>`).join('');
+      productGrid.innerHTML = products.map(([name, price]) => `<article class="card"><h3>${name}</h3><p>Producto base para cotizacion comercial.</p><div class="price">Desde RD$${price.toLocaleString('es-DO')}</div><a class="btn secondary" href="#cotizar" style="margin-top:16px">Cotizar</a></article>`).join('');
+
+      document.getElementById('leadForm').addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const status = document.getElementById('formStatus');
+        status.textContent = 'Enviando...';
+        try {
+          const response = await fetch('/api/public/leads', { method: 'POST', body: new FormData(event.currentTarget) });
+          if (!response.ok) throw new Error('No se pudo crear la solicitud.');
+          event.currentTarget.reset();
+          status.textContent = 'Solicitud creada. Ya esta guardada como lead en Kikeled OS.';
+        } catch (error) {
+          status.textContent = error.message;
+        }
+      });
+    </script>
+  </body>
+</html>
