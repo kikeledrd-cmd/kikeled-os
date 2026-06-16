@@ -1,10 +1,26 @@
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;600;700;800;900&family=Montserrat:wght@400;500;600;700;800&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  color: #f3f5f8;
-  background: #06070a;
+  --k-black: #0A0A0A;
+  --k-red: #FF1E1E;
+  --k-orange: #FF8A00;
+  --k-yellow: #F5FF00;
+  --k-green: #00FF85;
+  --k-cyan: #00D6FF;
+  --k-blue: #2962FF;
+  --k-white: #F3F5F8;
+  --k-muted: #AAB3C2;
+  --k-glass: rgba(255, 255, 255, 0.045);
+  --k-glass-strong: rgba(255, 255, 255, 0.075);
+  --k-border: rgba(255, 255, 255, 0.12);
+  --font-heading: "Orbitron", sans-serif;
+  --font-body: "Montserrat", sans-serif;
+  color: var(--k-white);
+  background: var(--k-black);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -19,8 +35,9 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
-  background: #06070a;
-  color: #f3f5f8;
+  background: var(--k-black);
+  color: var(--k-white);
+  font-family: var(--font-body);
 }
 
 #root {
@@ -1239,4 +1256,266 @@ select.field option:checked {
     min-height: auto;
     padding: 26px;
   }
+}
+
+/* Kikeled official public brand layer */
+.k-public-shell,
+.k-page {
+  --k-black: #0A0A0A;
+  --k-red: #FF1E1E;
+  --k-orange: #FF8A00;
+  --k-yellow: #F5FF00;
+  --k-green: #00FF85;
+  --k-cyan: #00D6FF;
+  --k-blue: #2962FF;
+  --k-white: #F3F5F8;
+  --k-muted: #AAB3C2;
+  --k-glass: rgba(255, 255, 255, 0.045);
+  --k-glass-strong: rgba(255, 255, 255, 0.075);
+  --k-border: rgba(255, 255, 255, 0.12);
+  --font-heading: "Orbitron", sans-serif;
+  --font-body: "Montserrat", sans-serif;
+  font-family: var(--font-body);
+  color: var(--k-white);
+  background: var(--k-black);
+}
+
+.k-page {
+  background:
+    radial-gradient(circle at 12% 4%, rgba(255, 30, 30, 0.22), transparent 25%),
+    radial-gradient(circle at 78% 0%, rgba(0, 214, 255, 0.20), transparent 28%),
+    radial-gradient(circle at 52% 16%, rgba(0, 255, 133, 0.10), transparent 35%),
+    linear-gradient(180deg, var(--k-black) 0%, var(--k-black) 100%);
+}
+
+.k-public-nav {
+  background: rgba(10, 10, 10, 0.85);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.10);
+}
+
+.k-logo {
+  display: flex;
+  align-items: center;
+  width: 190px;
+}
+
+.k-logo img {
+  width: 100%;
+  height: auto;
+  max-height: 58px;
+  object-fit: contain;
+  object-position: left center;
+  filter: drop-shadow(0 0 18px rgba(0, 214, 255, 0.18));
+}
+
+.k-logo-hero {
+  width: min(330px, 72vw);
+  margin-bottom: 24px;
+}
+
+.k-logo-hero img {
+  max-height: 240px;
+  filter:
+    drop-shadow(0 0 28px rgba(255, 30, 30, 0.20))
+    drop-shadow(0 0 34px rgba(0, 214, 255, 0.18));
+}
+
+.k-logo-footer {
+  width: 220px;
+  margin-bottom: 18px;
+}
+
+.k-logo-fallback {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+}
+
+.k-nav-links {
+  font-family: var(--font-body);
+  color: var(--k-muted);
+}
+
+.k-nav-links a:hover,
+.k-footer a:hover {
+  color: var(--k-cyan);
+}
+
+.k-btn,
+.k-os-access,
+.k-menu-button {
+  font-family: var(--font-heading);
+  letter-spacing: 0;
+}
+
+.k-btn-red {
+  color: var(--k-white);
+  border-color: rgba(255, 30, 30, 0.90);
+  background: linear-gradient(135deg, rgba(255, 30, 30, 0.52), rgba(10, 10, 10, 0.94));
+  box-shadow: 0 0 28px rgba(255, 30, 30, 0.25), inset 0 0 18px rgba(255, 30, 30, 0.18);
+}
+
+.k-btn-green,
+.k-whatsapp-dot {
+  border-color: rgba(0, 255, 133, 0.70);
+  background: rgba(0, 255, 133, 0.18);
+  box-shadow: 0 0 28px rgba(0, 255, 133, 0.22);
+}
+
+.k-whatsapp-dot {
+  color: var(--k-black);
+  background: var(--k-green);
+}
+
+.k-btn-dark,
+.k-btn-outline,
+.k-os-access,
+.k-menu-button {
+  color: var(--k-white);
+  background: rgba(255, 255, 255, 0.045);
+  border-color: var(--k-border);
+}
+
+.k-kicker,
+.k-section-header > p {
+  font-family: var(--font-heading);
+  color: var(--k-red);
+  letter-spacing: 0.22em;
+}
+
+.k-hero h1,
+.k-section-header h2,
+.k-quote-panel h3,
+.k-package-price,
+.k-neon-sign strong {
+  font-family: var(--font-heading);
+  color: var(--k-white);
+}
+
+.k-hero h1 {
+  font-weight: 900;
+  letter-spacing: 0;
+  line-height: 0.98;
+}
+
+.k-section-header h2 {
+  font-weight: 800;
+}
+
+.k-hero-text,
+.k-section-header span,
+.k-neon-card p,
+.k-method-card p,
+.k-package-card p,
+.k-quote-panel p,
+.k-footer p,
+.k-footer span,
+.k-footer a {
+  color: var(--k-muted);
+}
+
+.k-red { color: var(--k-red); text-shadow: 0 0 28px rgba(255, 30, 30, 0.25); }
+.k-orange { color: var(--k-orange); text-shadow: 0 0 28px rgba(255, 138, 0, 0.22); }
+.k-green { color: var(--k-green); text-shadow: 0 0 28px rgba(0, 255, 133, 0.22); }
+.k-blue { color: var(--k-blue); text-shadow: 0 0 28px rgba(41, 98, 255, 0.22); }
+
+.k-hero-visual,
+.k-neon-card,
+.k-method-card,
+.k-package-card,
+.k-quote-panel,
+.k-form-shell,
+.k-footer {
+  border-radius: 8px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.060), rgba(255, 255, 255, 0.020));
+  border: 1px solid var(--k-border);
+}
+
+.k-hero-visual {
+  box-shadow:
+    inset 0 0 42px rgba(0, 214, 255, 0.18),
+    0 28px 90px rgba(10, 10, 10, 0.92);
+}
+
+.k-hero-visual::before {
+  border-color: rgba(0, 214, 255, 0.22);
+  border-left-color: rgba(255, 30, 30, 0.42);
+}
+
+.k-neon-card,
+.k-method-card,
+.k-package-card,
+.k-quote-panel {
+  color: var(--tone);
+  box-shadow: 0 0 28px color-mix(in srgb, currentColor 18%, transparent), inset 0 0 26px rgba(255, 255, 255, 0.045);
+}
+
+.k-neon-card h3,
+.k-method-card h3,
+.k-package-card h3,
+.k-product-card h3,
+.k-footer h4 {
+  font-family: var(--font-heading);
+  color: var(--k-white);
+}
+
+.k-method-card h3,
+.k-package-card h3 {
+  color: var(--tone);
+}
+
+.k-product-card {
+  border-color: var(--k-border);
+  background: rgba(255, 255, 255, 0.045);
+}
+
+.k-product-media {
+  background:
+    radial-gradient(circle at 50% 42%, rgba(243, 245, 248, 0.18), transparent 22%),
+    linear-gradient(135deg, rgba(0, 214, 255, 0.18), rgba(255, 30, 30, 0.18)),
+    var(--k-black);
+}
+
+.k-media-1 { background: radial-gradient(circle at 52% 50%, rgba(255, 30, 30, 0.45), transparent 24%), var(--k-black); }
+.k-media-2 { background: radial-gradient(circle at 50% 42%, rgba(255, 138, 0, 0.45), transparent 27%), var(--k-black); }
+.k-media-3 { background: radial-gradient(circle at 50% 42%, rgba(245, 255, 0, 0.30), transparent 27%), var(--k-black); }
+.k-media-4 { background: radial-gradient(circle at 50% 42%, rgba(0, 255, 133, 0.34), transparent 24%), var(--k-black); }
+.k-media-5 { background: radial-gradient(circle at 50% 42%, rgba(0, 214, 255, 0.38), transparent 24%), var(--k-black); }
+
+.k-form-shell .field {
+  color: var(--k-white);
+  background: rgba(10, 10, 10, 0.75);
+  border-color: var(--k-border);
+  font-family: var(--font-body);
+}
+
+.k-form-shell .field::placeholder {
+  color: rgba(170, 179, 194, 0.70);
+}
+
+.k-form-shell .field:focus {
+  border-color: var(--k-cyan);
+  box-shadow: 0 0 0 2px rgba(0, 214, 255, 0.18);
+}
+
+.k-file-field {
+  color: var(--k-muted);
+  background: rgba(10, 10, 10, 0.75);
+  border-color: var(--k-border);
+}
+
+.k-file-field input::file-selector-button {
+  background: var(--k-white);
+  color: var(--k-black);
+}
+
+.k-form-status.is-success { color: var(--k-green); }
+.k-form-status.is-error { color: var(--k-red); }
+
+.k-footer {
+  background: rgba(10, 10, 10, 0.92);
+  border-left-color: rgba(255, 30, 30, 0.60);
+  border-right-color: rgba(0, 214, 255, 0.60);
 }

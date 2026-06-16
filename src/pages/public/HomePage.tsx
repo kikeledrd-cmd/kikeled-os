@@ -18,6 +18,7 @@ import {
   Zap,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { Logo } from '../../components/brand/Logo';
 import { QuoteForm } from '../../components/landing/QuoteForm';
 import { brand } from '../../lib/brand';
 import { packages } from '../../lib/packages';
@@ -25,25 +26,25 @@ import { products } from '../../lib/products';
 import { currency } from '../../lib/utils';
 
 const services = [
-  { title: 'Letreros y fachadas', text: 'LED, cajas de luz, panaflex, 3D, acrilico y presencia exterior.', Icon: Eye, tone: 'red' },
-  { title: 'Diseno de espacios', text: 'Interiores comerciales, recepciones, paredes de marca y exhibidores.', Icon: MonitorSmartphone, tone: 'orange' },
-  { title: 'Fabricacion personalizada', text: 'Corte CNC, acrilico, PVC, vinil, estructura y acabado premium.', Icon: Heart, tone: 'yellow' },
-  { title: 'Branding fisico', text: 'Senaletica, rotulacion, identidad visual y sistema de marca visible.', Icon: Settings, tone: 'green' },
-  { title: 'Soluciones digitales', text: 'Web, catalogo, CRM, WhatsApp, formularios y flujo de ventas.', Icon: CircuitBoard, tone: 'cyan' },
-  { title: 'Transformacion 360', text: 'Estrategia, diseno, ejecucion y presencia completa del negocio.', Icon: LineChart, tone: 'blue' },
+  { title: 'Letreros y fachadas', text: 'LED, cajas de luz, panaflex, 3D, acrílico y presencia exterior.', Icon: Eye, tone: 'red' },
+  { title: 'Diseño de espacios', text: 'Interiores comerciales, recepciones, paredes de marca y exhibidores.', Icon: MonitorSmartphone, tone: 'orange' },
+  { title: 'Fabricación personalizada', text: 'Corte CNC, acrílico, PVC, vinil, estructura y acabado premium.', Icon: Heart, tone: 'yellow' },
+  { title: 'Branding físico', text: 'Señalética, rotulación, identidad visual y sistema de marca visible.', Icon: Settings, tone: 'green' },
+  { title: 'Soluciones digitales', text: 'Web, catálogo, CRM, WhatsApp, formularios y flujo de ventas.', Icon: CircuitBoard, tone: 'cyan' },
+  { title: 'Transformación 360', text: 'Estrategia, diseño, ejecución y presencia completa del negocio.', Icon: LineChart, tone: 'blue' },
 ];
 
 const method = [
-  { title: 'Se ve', text: 'Letreros LED, fachadas, branding fisico, senaletica, rotulacion y presencia exterior.', Icon: Eye, tone: 'red' },
-  { title: 'Se siente', text: 'Interiores comerciales, recepciones, paredes de marca, ambientacion visual y experiencia del cliente.', Icon: Heart, tone: 'orange' },
-  { title: 'Vende', text: 'Pagina web, catalogo digital, WhatsApp automatizado, CRM, cotizador, formulario y seguimiento.', Icon: LineChart, tone: 'green' },
+  { title: 'Se ve', text: 'Letreros LED, fachadas, branding físico, señalética, rotulación y presencia exterior.', Icon: Eye, tone: 'red' },
+  { title: 'Se siente', text: 'Interiores comerciales, recepciones, paredes de marca, ambientación visual y experiencia del cliente.', Icon: Heart, tone: 'orange' },
+  { title: 'Vende', text: 'Página web, catálogo digital, WhatsApp automatizado, CRM, cotizador, formulario y seguimiento.', Icon: LineChart, tone: 'blue' },
 ];
 
 const formBenefits = [
-  ['Respuesta rapida', 'Te contactamos con una ruta clara para cotizar.'],
-  ['Asesoria personalizada', 'Revisamos negocio, ciudad, medidas, material y urgencia.'],
+  ['Respuesta rápida', 'Te contactamos con una ruta clara para cotizar.'],
+  ['Asesoría personalizada', 'Revisamos negocio, ciudad, medidas, material y urgencia.'],
   ['Propuesta profesional', 'Recibes una solicitud ordenada en el CRM.'],
-  ['Garantia KIKELED', 'Calidad, criterio y soporte antes, durante y despues.'],
+  ['Garantía KIKELED', 'Calidad, criterio y soporte antes, durante y después.'],
 ];
 
 export function HomePage() {
@@ -65,10 +66,11 @@ function Hero() {
   return (
     <section className="k-hero">
       <div className="k-hero-copy">
-        <p className="k-kicker">ESTUDIO FISICO-DIGITAL</p>
+        <Logo size="hero" />
+        <p className="k-kicker">ESTUDIO FÍSICO-DIGITAL</p>
         <h1>
-          Disenamos negocios que <span className="k-red">se ven,</span>{' '}
-          <span className="k-orange">se sienten</span> y <span className="k-green">venden.</span>
+          Diseñamos negocios que <span className="k-red">se ven,</span>{' '}
+          <span className="k-green">se sienten</span> y <span className="k-blue">venden.</span>
         </h1>
         <p className="k-hero-text">{brand.description}</p>
         <div className="k-hero-actions">
@@ -95,7 +97,7 @@ function Hero() {
             </div>
           ))}
         </div>
-        <p className="k-hero-footnote">{brand.name} - Estudio fisico-digital para negocios modernos en RD</p>
+        <p className="k-hero-footnote">{brand.name} - Estudio físico-digital para negocios modernos en RD</p>
       </div>
       <HeroVisual />
     </section>
@@ -137,7 +139,7 @@ function HeroVisual() {
         <div className="k-phone-notch" />
         <p>Mi Negocio</p>
         <div className="k-chat k-chat-green">Cotizar fachada</div>
-        <div className="k-chat">Catalogo</div>
+        <div className="k-chat">Catálogo</div>
         <div className="k-chat">Soporte</div>
       </div>
     </div>
@@ -147,7 +149,7 @@ function HeroVisual() {
 function Services() {
   return (
     <section id="servicios" className="k-section">
-      <SectionHeader eyebrow="LO QUE HACEMOS" title="Creamos la presencia completa de tu negocio." text="No entregamos piezas sueltas. Disenamos una experiencia conectada para que tu negocio se vea profesional, se sienta premium y tenga herramientas digitales para vender mejor." />
+      <SectionHeader eyebrow="PILARES DE MARCA" title="Creamos la presencia completa de tu negocio." text="No entregamos piezas sueltas. Diseñamos una experiencia conectada para que tu negocio se vea profesional, se sienta premium y tenga herramientas digitales para vender mejor." />
       <div className="k-service-grid">
         {services.map(({ title, text, Icon, tone }) => (
           <article className={`k-neon-card k-tone-${tone}`} key={title}>
@@ -165,7 +167,7 @@ function Services() {
 function Method() {
   return (
     <section id="metodo" className="k-section">
-      <SectionHeader eyebrow="NUESTRO METODO" title="Se ve. Se siente. Vende." text="El metodo KIKELED une presencia fisica, experiencia visual y herramientas comerciales para que la marca trabaje incluso antes de que el cliente pregunte el precio." />
+      <SectionHeader eyebrow="MÉTODO KIKELED" title="Se ve. Se siente. Vende." text="El método KIKELED une presencia física, experiencia visual y herramientas comerciales para que la marca trabaje incluso antes de que el cliente pregunte el precio." />
       <div className="k-method-grid">
         {method.map(({ title, text, Icon, tone }) => (
           <article className={`k-method-card k-tone-${tone}`} key={title}>
@@ -190,8 +192,8 @@ function Catalog() {
   return (
     <section id="catalogo" className="k-section">
       <div className="k-section-split">
-        <SectionHeader eyebrow="CATALOGO DE PRODUCTOS" title="Soluciones visuales que elevan tu marca." text="Productos base para cotizar rapido, producir con criterio y construir presencia visual en Republica Dominicana." />
-        <Link className="k-btn k-btn-dark" to="/catalogo">Ver catalogo completo</Link>
+        <SectionHeader eyebrow="CATÁLOGO" title="Soluciones visuales que elevan tu marca." text="Productos base para cotizar rápido, producir con criterio y construir presencia visual en República Dominicana." />
+        <Link className="k-btn k-btn-dark" to="/catalogo">Ver catálogo completo</Link>
       </div>
       <div className="k-product-grid">
         {products.slice(0, 6).map((product, index) => (
@@ -214,7 +216,7 @@ function Catalog() {
 function Packages() {
   return (
     <section id="paquetes" className="k-section">
-      <SectionHeader eyebrow="PROCESO DE TRABAJO" title="Del logo al negocio encendido." text="Elige una ruta comercial y luego ajustamos medidas, materiales, ciudad, instalacion y tiempo de entrega." />
+      <SectionHeader eyebrow="PAQUETES" title="Del logo al negocio encendido." text="Elige una ruta comercial y luego ajustamos medidas, materiales, ciudad, instalación y tiempo de entrega." />
       <div className="k-package-grid">
         {packages.map((item, index) => (
           <article className={`k-package-card k-tone-${['red', 'orange', 'green'][index] ?? 'cyan'}`} key={item.name}>
@@ -241,13 +243,13 @@ function QuoteSection() {
   return (
     <section id="cotizar" className="k-section k-quote-section">
       <div>
-        <SectionHeader eyebrow="COTIZA TU PROYECTO" title="Cuentanos tu proyecto y lo hacemos realidad." text="El formulario crea un lead real dentro de Kikeled OS para que ventas pueda dar seguimiento con datos claros." />
+        <SectionHeader eyebrow="COTIZA TU PROYECTO" title="Cuéntanos tu proyecto y lo hacemos realidad." text="El formulario crea un lead real dentro de Kikeled OS para que ventas pueda dar seguimiento con datos claros." />
         <QuoteForm compact />
       </div>
       <aside className="k-quote-panel">
         <BadgeCheck size={32} />
         <h3>Enviar solicitud</h3>
-        <p>Tu informacion entra segura al CRM. No compartimos tus datos y mantenemos el proyecto ordenado desde el primer contacto.</p>
+        <p>Tu información entra segura al CRM. No compartimos tus datos y mantenemos el proyecto ordenado desde el primer contacto.</p>
         <div className="k-benefit-list">
           {formBenefits.map(([title, text]) => (
             <div key={title}>

@@ -5,8 +5,8 @@ import { brand } from '../../lib/brand';
 
 const nav = [
   { label: 'Servicios', to: '/#servicios' },
-  { label: 'Metodo', to: '/#metodo' },
-  { label: 'Catalogo', to: '/catalogo' },
+  { label: 'Método', to: '/#metodo' },
+  { label: 'Catálogo', to: '/catalogo' },
   { label: 'Paquetes', to: '/#paquetes' },
   { label: 'Cotizar', to: '/cotizar' },
 ];
@@ -36,7 +36,7 @@ export function PublicLayout() {
             <Link to="/os/login" className="k-os-access">
               Acceso OS
             </Link>
-            <button className="k-menu-button" aria-label="Abrir menu">
+            <button className="k-menu-button" aria-label="Abrir menú">
               <Menu size={19} />
             </button>
           </div>
@@ -46,7 +46,7 @@ export function PublicLayout() {
       <footer className="k-footer">
         <div className="k-footer-grid">
           <div>
-            <Logo />
+            <Logo size="footer" />
             <p>{brand.shortDescription}</p>
             <div className="k-social-row">
               <span><Instagram size={15} />{brand.instagram}</span>
@@ -56,12 +56,12 @@ export function PublicLayout() {
           <div>
             <h4>Servicios</h4>
             <a href="/#servicios">Letreros y fachadas</a>
-            <a href="/#servicios">Branding fisico</a>
-            <a href="/#catalogo">Catalogo</a>
+            <a href="/#servicios">Branding físico</a>
+            <a href="/#catalogo">Catálogo</a>
           </div>
           <div>
-            <h4>Compania</h4>
-            <Link to="/catalogo">Catalogo</Link>
+            <h4>Compañía</h4>
+            <Link to="/catalogo">Catálogo</Link>
             <Link to="/cotizar">Cotizar</Link>
             <Link to="/contacto">Contacto</Link>
           </div>

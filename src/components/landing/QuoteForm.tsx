@@ -4,7 +4,7 @@ import { apiCreatePublicLead } from '../../lib/api';
 import { products } from '../../lib/products';
 
 const urgencyOptions = ['Normal', 'Esta semana', 'Urgente', 'Solo explorando'];
-const businessTypes = ['Restaurante', 'Barberia', 'Salon', 'Tienda', 'Oficina', 'Gaming/streaming', 'Emprendimiento', 'Otro'];
+const businessTypes = ['Restaurante', 'Barbería', 'Salón', 'Tienda', 'Oficina', 'Gaming/streaming', 'Emprendimiento', 'Otro'];
 
 export function QuoteForm({ selectedProduct = '', compact = false }: { selectedProduct?: string; compact?: boolean }) {
   const [status, setStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
@@ -21,7 +21,7 @@ export function QuoteForm({ selectedProduct = '', compact = false }: { selectedP
       await apiCreatePublicLead(formData);
       event.currentTarget.reset();
       setStatus('sent');
-      setMessage('Solicitud creada. Ya esta guardada como lead en Kikeled OS.');
+      setMessage('Solicitud creada. Ya está guardada como lead en Kikeled OS.');
     } catch (error) {
       setStatus('error');
       setMessage(error instanceof Error ? error.message : 'No se pudo enviar la solicitud.');
@@ -32,16 +32,16 @@ export function QuoteForm({ selectedProduct = '', compact = false }: { selectedP
     <form onSubmit={handleSubmit} className={`k-form-shell ${compact ? 'k-form-compact' : ''}`}>
       <div className="k-form-note">
         <CheckCircle2 size={20} />
-        <p>Envia logo, foto del local o referencia. Esta solicitud entra directo al CRM comercial.</p>
+        <p>Envía logo, foto del local o referencia. Esta solicitud entra directo al CRM comercial.</p>
       </div>
       <div className="k-form-grid">
         <input name="name" className="field" placeholder="Nombre completo" required />
         <input name="whatsapp" className="field" placeholder="WhatsApp" required />
-        <input name="phone" className="field" placeholder="Telefono" required />
-        <input name="email" className="field" placeholder="Correo electronico" type="email" required />
+        <input name="phone" className="field" placeholder="Teléfono" required />
+        <input name="email" className="field" placeholder="Correo electrónico" type="email" required />
         <input name="business" className="field" placeholder="Negocio o marca" required />
         <input name="city" className="field" placeholder="Ciudad / Zona" required />
-        <input name="address" className="field md:col-span-2" placeholder="Direccion o zona de instalacion" required />
+        <input name="address" className="field md:col-span-2" placeholder="Dirección o zona de instalación" required />
         <select name="businessType" className="field" defaultValue="" required>
           <option value="" disabled>Tipo de negocio</option>
           {businessTypes.map((type) => <option key={type}>{type}</option>)}
@@ -56,7 +56,7 @@ export function QuoteForm({ selectedProduct = '', compact = false }: { selectedP
           <option value="" disabled>Urgencia del proyecto</option>
           {urgencyOptions.map((option) => <option key={option}>{option}</option>)}
         </select>
-        <textarea name="description" className="field md:col-span-2" placeholder="Describe el proyecto, donde ira instalado y que estilo buscas" rows={compact ? 3 : 5} required />
+        <textarea name="description" className="field md:col-span-2" placeholder="Describe el proyecto, dónde irá instalado y qué estilo buscas" rows={compact ? 3 : 5} required />
         <label className="k-file-field md:col-span-2">
           Sube tu logo, foto del local o referencia
           <input name="referenceFile" type="file" accept="image/*,.pdf" />

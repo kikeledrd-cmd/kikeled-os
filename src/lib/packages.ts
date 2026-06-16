@@ -15,6 +15,14 @@ export const packages = [
     name: 'Kikeled 360',
     price: 'Cotización personalizada',
     description: 'Para negocios que quieren relanzarse completo con presencia física y sistema digital.',
-    includes: ['Diseño de espacio', 'Fachada', 'Branding físico', 'Web o landing', 'Catálogo digital', 'WhatsApp automatizado', 'CRM / cotizador'],
+    includes: [
+      'Diseño de espacio',
+      'Fachada',
+      'Branding físico',
+      'Web o landing',
+      'Catálogo digital',
+      'WhatsApp automatizado',
+      'CRM / cotizador',
+    ],
   },
 ];
