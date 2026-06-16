@@ -35,10 +35,21 @@ initDatabase();
 
 export const app = express();
 const PORT = Number(process.env.PORT ?? 4000);
+const allowedOrigins = [
+  'http://localhost:5173',
+  process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : '',
+  process.env.KIKELED_APP_URL ?? '',
+].filter(Boolean);
 
 app.use(
   cors({
-    origin: 'http://localhost:5173',
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin) || origin.endsWith('.vercel.app')) {
+        callback(null, true);
+        return;
+      }
+      callback(null, false);
+    },
     credentials: true,
   }),
 );
