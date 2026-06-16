@@ -225,6 +225,12 @@ export async function initDatabase() {
       CREATE INDEX IF NOT EXISTS users_email_idx ON users (email);
       CREATE INDEX IF NOT EXISTS users_customer_id_idx ON users (customer_id);
     `);
+    await postgresQuery(`
+      ALTER TABLE users ENABLE ROW LEVEL SECURITY;
+      ALTER TABLE app_state ENABLE ROW LEVEL SECURITY;
+      REVOKE ALL ON TABLE users FROM anon, authenticated;
+      REVOKE ALL ON TABLE app_state FROM anon, authenticated;
+    `);
   } else {
     localDb!.exec(`
       CREATE TABLE IF NOT EXISTS users (

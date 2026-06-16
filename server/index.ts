@@ -2,6 +2,8 @@ import bcrypt from 'bcryptjs';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import express from 'express';
+import rateLimit from 'express-rate-limit';
+import helmet from 'helmet';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
@@ -31,6 +33,14 @@ const previewDir = path.join(process.cwd(), 'server', 'public-preview');
 const directClientDir = path.join(process.cwd(), 'dist-direct');
 if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
 
+const allowedUploadMimeTypes = new Set([
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'image/gif',
+  'application/pdf',
+]);
+
 const upload = multer({
   storage: multer.diskStorage({
     destination: (_req, _file, cb) => cb(null, uploadsDir),
@@ -40,22 +50,61 @@ const upload = multer({
     },
   }),
   limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    if (allowedUploadMimeTypes.has(file.mimetype)) {
+      cb(null, true);
+      return;
+    }
+    cb(new Error('Tipo de archivo no permitido.'));
+  },
 });
 
 await initDatabase();
 
 export const app = express();
 const PORT = Number(process.env.PORT ?? 4000);
+app.set('trust proxy', 1);
+
 const allowedOrigins = [
   'http://localhost:5173',
+  'http://localhost:4000',
   process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : '',
   process.env.KIKELED_APP_URL ?? '',
 ].filter(Boolean);
 
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 300,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: 'Demasiadas solicitudes. Intenta de nuevo en unos minutos.' },
+});
+
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: 'Demasiados intentos de acceso. Intenta de nuevo en unos minutos.' },
+});
+
+const publicWriteLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  limit: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: 'Demasiadas solicitudes. Intenta de nuevo mas tarde.' },
+});
+
+app.use(
+  helmet({
+    crossOriginResourcePolicy: { policy: 'same-site' },
+  }),
+);
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin) || origin.endsWith('.vercel.app')) {
+      if (!origin || allowedOrigins.includes(origin)) {
         callback(null, true);
         return;
       }
@@ -66,6 +115,7 @@ app.use(
 );
 app.use(cookieParser());
 app.use(express.json({ limit: '5mb' }));
+app.use('/api', apiLimiter);
 app.use('/uploads', express.static(uploadsDir));
 if (fs.existsSync(directClientDir)) {
   app.use(express.static(directClientDir));
@@ -79,6 +129,11 @@ app.get('/api/health', (_req, res) => {
 });
 
 app.get('/api/debug/auth', async (_req, res, next) => {
+  if (process.env.ENABLE_DEBUG_ROUTES !== 'true') {
+    res.status(404).json({ message: 'No encontrado.' });
+    return;
+  }
+
   try {
     const userCount = await getUserCount();
     const adminUser = await getUserByEmail('kike@kikeled.com');
@@ -95,7 +150,7 @@ app.get('/api/debug/auth', async (_req, res, next) => {
   }
 });
 
-app.post('/api/public/leads', upload.single('referenceFile'), async (req, res, next) => {
+app.post('/api/public/leads', publicWriteLimiter, upload.single('referenceFile'), async (req, res, next) => {
   try {
   const parsed = z
     .object({
@@ -128,7 +183,7 @@ app.post('/api/public/leads', upload.single('referenceFile'), async (req, res, n
   }
 });
 
-app.post('/api/auth/login', async (req, res) => {
+app.post('/api/auth/login', authLimiter, async (req, res) => {
   const schema = z.object({
     email: z.string().email(),
     password: z.string().min(6),
@@ -422,7 +477,7 @@ app.post('/api/client/requests', requireAuth, async (req, res, next) => {
   }
 });
 
-app.post('/api/upload', requireAuth, upload.single('file'), (req, res) => {
+app.post('/api/upload', publicWriteLimiter, requireAuth, upload.single('file'), (req, res) => {
   if (!req.file) {
     res.status(400).json({ message: 'No se recibió ningún archivo.' });
     return;

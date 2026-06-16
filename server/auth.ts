@@ -5,11 +5,15 @@ import { getUserById } from './db.js';
 import { loadAppData } from './state.js';
 import type { SessionUser } from './types.js';
 
-const JWT_SECRET = process.env.JWT_SECRET ?? 'kikeled-os-dev-secret';
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET && process.env.NODE_ENV === 'production') {
+  throw new Error('JWT_SECRET must be configured in production.');
+}
+const effectiveJwtSecret = JWT_SECRET ?? 'kikeled-os-dev-secret';
 export const AUTH_COOKIE = 'kikeled_session';
 
 export function signAuthToken(payload: AuthPayload) {
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: '7d' });
+  return jwt.sign(payload, effectiveJwtSecret, { expiresIn: '7d' });
 }
 
 export async function getSessionUser(userId: string): Promise<SessionUser | null> {
@@ -41,7 +45,7 @@ export function readAuthPayload(req: Request): AuthPayload | null {
   if (!token) return null;
 
   try {
-    return jwt.verify(token, JWT_SECRET) as AuthPayload;
+    return jwt.verify(token, effectiveJwtSecret) as AuthPayload;
   } catch {
     return null;
   }
