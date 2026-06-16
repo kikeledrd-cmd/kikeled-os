@@ -15,7 +15,7 @@ import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const uploadsDir = path.join(__dirname, '..', 'uploads');
+const uploadsDir = process.env.VERCEL ? path.join('/tmp', 'uploads') : path.join(__dirname, '..', 'uploads');
 const previewDir = path.join(process.cwd(), 'server', 'public-preview');
 const directClientDir = path.join(process.cwd(), 'dist-direct');
 if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
@@ -33,7 +33,7 @@ const upload = multer({
 
 initDatabase();
 
-const app = express();
+export const app = express();
 const PORT = Number(process.env.PORT ?? 4000);
 
 app.use(
@@ -406,6 +406,8 @@ if (fs.existsSync(directClientDir) || fs.existsSync(previewDir)) {
   });
 }
 
-app.listen(PORT, () => {
-  console.log(`Kikeled OS API running on http://localhost:${PORT}`);
-});
+if (!process.env.VERCEL) {
+  app.listen(PORT, () => {
+    console.log(`Kikeled OS API running on http://localhost:${PORT}`);
+  });
+}

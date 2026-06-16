@@ -24,7 +24,7 @@ type JsonDbState = {
 
 const baseDataDir =
   process.env.KIKELED_DB_DIR ??
-  path.join(process.cwd(), 'server', 'data');
+  (process.env.VERCEL ? path.join('/tmp', 'kikeled-os-data') : path.join(process.cwd(), 'server', 'data'));
 
 const dataDir = baseDataDir;
 fs.mkdirSync(dataDir, { recursive: true });
