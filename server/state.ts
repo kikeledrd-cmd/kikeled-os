@@ -1,12 +1,12 @@
 import { createId } from '../src/lib/utils.js';
 import { normalizeLeadStatus } from '../src/lib/leadStatus.js';
 import type { AppData, Lead } from '../src/types/entities.js';
-import { db } from './db.js';
+import { getAppStateData, saveAppStateData } from './db.js';
 import type { SessionUser } from './types.js';
 
-export function loadAppData(): AppData {
-  const row = db.prepare('SELECT data FROM app_state WHERE id = 1').get() as { data: string };
-  const appData = JSON.parse(row.data) as AppData;
+export async function loadAppData(): Promise<AppData> {
+  const data = await getAppStateData();
+  const appData = JSON.parse(data) as AppData;
   return {
     ...appData,
     leads: appData.leads.map((lead) => ({
@@ -17,11 +17,8 @@ export function loadAppData(): AppData {
   };
 }
 
-export function saveAppData(appData: AppData) {
-  db.prepare('UPDATE app_state SET data = ?, updated_at = ? WHERE id = 1').run(
-    JSON.stringify(appData),
-    new Date().toISOString(),
-  );
+export async function saveAppData(appData: AppData) {
+  await saveAppStateData(JSON.stringify(appData), new Date().toISOString());
 }
 
 export function filterAppDataForUser(appData: AppData, sessionUser: SessionUser): AppData {
@@ -51,8 +48,8 @@ export function filterAppDataForUser(appData: AppData, sessionUser: SessionUser)
   };
 }
 
-export function createClientLead(sessionUser: SessionUser, input: Pick<Lead, 'interestType' | 'description' | 'estimatedBudget'>) {
-  const appData = loadAppData();
+export async function createClientLead(sessionUser: SessionUser, input: Pick<Lead, 'interestType' | 'description' | 'estimatedBudget'>) {
+  const appData = await loadAppData();
   const customer = appData.customers.find((item) => item.id === sessionUser.customerId);
   if (!customer) {
     throw new Error('Cliente no asociado a la sesión.');
@@ -89,11 +86,11 @@ export function createClientLead(sessionUser: SessionUser, input: Pick<Lead, 'in
     createdAt: new Date().toISOString(),
   });
 
-  saveAppData(appData);
+  await saveAppData(appData);
   return filterAppDataForUser(appData, sessionUser);
 }
 
-export function createPublicLead(input: {
+export async function createPublicLead(input: {
   name: string;
   business: string;
   phone: string;
@@ -109,7 +106,7 @@ export function createPublicLead(input: {
   description: string;
   referenceFileUrl?: string;
 }) {
-  const appData = loadAppData();
+  const appData = await loadAppData();
   const newLead: Lead = {
     id: createId('lead'),
     name: input.name,
@@ -150,6 +147,6 @@ export function createPublicLead(input: {
     createdAt: new Date().toISOString(),
   });
 
-  saveAppData(appData);
+  await saveAppData(appData);
   return newLead;
 }

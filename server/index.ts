@@ -7,7 +7,18 @@ import path from 'path';
 import fs from 'fs';
 import { z } from 'zod';
 import { clearAuthCookie, getSessionUser, readAuthPayload, requireAdmin, requireAuth, setAuthCookie, signAuthToken } from './auth.js';
-import { db, initDatabase } from './db.js';
+import {
+  deleteUser,
+  getDatabaseMode,
+  getUserByEmail,
+  getUserById,
+  getUserCount,
+  initDatabase,
+  insertUser,
+  listUsers,
+  updateUser,
+  type UserRow,
+} from './db.js';
 import { createClientLead, createPublicLead, filterAppDataForUser, loadAppData, saveAppData } from './state.js';
 import type { AppData, User } from '../src/types/entities.js';
 import { createId } from '../src/lib/utils.js';
@@ -31,7 +42,7 @@ const upload = multer({
   limits: { fileSize: 10 * 1024 * 1024 },
 });
 
-initDatabase();
+await initDatabase();
 
 export const app = express();
 const PORT = Number(process.env.PORT ?? 4000);
@@ -67,21 +78,25 @@ app.get('/api/health', (_req, res) => {
   res.json({ ok: true });
 });
 
-app.get('/api/debug/auth', (_req, res) => {
-  const userCount = db.prepare('SELECT COUNT(*) as count FROM users').get() as { count: number };
-  const adminUser = db.prepare('SELECT id, email, role_id FROM users WHERE email = ?').get('kike@kikeled.com') as
-    | { id: string; email: string; role_id: string }
-    | undefined;
+app.get('/api/debug/auth', async (_req, res, next) => {
+  try {
+    const userCount = await getUserCount();
+    const adminUser = await getUserByEmail('kike@kikeled.com');
 
-  res.json({
-    ok: true,
-    userCount: userCount.count,
-    adminUser: adminUser ? { id: adminUser.id, email: adminUser.email, roleId: adminUser.role_id } : null,
-    runtime: process.env.VERCEL ? 'vercel' : 'local',
-  });
+    res.json({
+      ok: true,
+      userCount,
+      adminUser: adminUser ? { id: adminUser.id, email: adminUser.email, roleId: adminUser.role_id } : null,
+      runtime: process.env.VERCEL ? 'vercel' : 'local',
+      database: getDatabaseMode(),
+    });
+  } catch (error) {
+    next(error);
+  }
 });
 
-app.post('/api/public/leads', upload.single('referenceFile'), (req, res) => {
+app.post('/api/public/leads', upload.single('referenceFile'), async (req, res, next) => {
+  try {
   const parsed = z
     .object({
       name: z.string().min(2),
@@ -106,8 +121,11 @@ app.post('/api/public/leads', upload.single('referenceFile'), (req, res) => {
   }
 
   const referenceFileUrl = req.file ? `/uploads/${req.file.filename}` : undefined;
-  const lead = createPublicLead({ ...parsed.data, referenceFileUrl });
+  const lead = await createPublicLead({ ...parsed.data, referenceFileUrl });
   res.status(201).json({ success: true, message: 'Lead creado correctamente', lead });
+  } catch (error) {
+    next(error);
+  }
 });
 
 app.post('/api/auth/login', async (req, res) => {
@@ -122,9 +140,7 @@ app.post('/api/auth/login', async (req, res) => {
     return;
   }
 
-  const user = db.prepare('SELECT * FROM users WHERE email = ?').get(parsed.data.email) as
-    | { id: string; password_hash: string; role_id: string }
-    | undefined;
+  const user = await getUserByEmail(parsed.data.email);
 
   if (!user) {
     res.status(401).json({ message: 'Correo o contraseña incorrectos.' });
@@ -137,7 +153,7 @@ app.post('/api/auth/login', async (req, res) => {
     return;
   }
 
-  const sessionUser = getSessionUser(user.id);
+  const sessionUser = await getSessionUser(user.id);
   if (!sessionUser) {
     res.status(401).json({ message: 'No se pudo abrir la sesión.' });
     return;
@@ -152,14 +168,15 @@ app.post('/api/auth/logout', (_req, res) => {
   res.json({ ok: true });
 });
 
-app.get('/api/auth/session', (req, res) => {
+app.get('/api/auth/session', async (req, res, next) => {
+  try {
   const payload = readAuthPayload(req);
   if (!payload) {
     res.status(401).json({ message: 'Sin sesión.' });
     return;
   }
 
-  const sessionUser = getSessionUser(payload.userId);
+  const sessionUser = await getSessionUser(payload.userId);
   if (!sessionUser) {
     clearAuthCookie(res);
     res.status(401).json({ message: 'Sesión inválida.' });
@@ -167,14 +184,21 @@ app.get('/api/auth/session', (req, res) => {
   }
 
   res.json({ sessionUser });
+  } catch (error) {
+    next(error);
+  }
 });
 
-app.get('/api/app-state', requireAuth, (req, res) => {
-  const appData = loadAppData();
+app.get('/api/app-state', requireAuth, async (req, res, next) => {
+  try {
+  const appData = await loadAppData();
   res.json({
     appData: filterAppDataForUser(appData, req.sessionUser!),
     sessionUser: req.sessionUser,
   });
+  } catch (error) {
+    next(error);
+  }
 });
 
 function requireSystemAdminOnly(req: express.Request, res: express.Response) {
@@ -184,16 +208,6 @@ function requireSystemAdminOnly(req: express.Request, res: express.Response) {
   }
   return true;
 }
-
-type UserRow = {
-  id: string;
-  email: string;
-  name: string;
-  role_id: string;
-  avatar: string;
-  customer_id: string | null;
-  password_hash: string;
-};
 
 function rowToUser(row: UserRow): User {
   return {
@@ -206,10 +220,10 @@ function rowToUser(row: UserRow): User {
   };
 }
 
-function syncUserIntoAppState(user: User) {
-  const appData = loadAppData();
+async function syncUserIntoAppState(user: User) {
+  const appData = await loadAppData();
   const exists = appData.users.some((item) => item.id === user.id);
-  saveAppData({
+  await saveAppData({
     ...appData,
     users: exists
       ? appData.users.map((item) => (item.id === user.id ? user : item))
@@ -217,18 +231,22 @@ function syncUserIntoAppState(user: User) {
   });
 }
 
-function removeUserFromAppState(userId: string) {
-  const appData = loadAppData();
-  saveAppData({
+async function removeUserFromAppState(userId: string) {
+  const appData = await loadAppData();
+  await saveAppData({
     ...appData,
     users: appData.users.filter((item) => item.id !== userId),
   });
 }
 
-app.get('/api/users', requireAuth, (req, res) => {
+app.get('/api/users', requireAuth, async (req, res, next) => {
+  try {
   if (!requireSystemAdminOnly(req, res)) return;
-  const rows = db.prepare('SELECT * FROM users ORDER BY name').all() as UserRow[];
+  const rows = await listUsers();
   res.json({ users: rows.map(rowToUser) });
+  } catch (error) {
+    next(error);
+  }
 });
 
 app.post('/api/users', requireAuth, async (req, res) => {
@@ -249,7 +267,7 @@ app.post('/api/users', requireAuth, async (req, res) => {
     return;
   }
 
-  const existing = db.prepare('SELECT * FROM users WHERE email = ?').get(parsed.data.email) as UserRow | undefined;
+  const existing = await getUserByEmail(parsed.data.email);
   if (existing) {
     res.status(409).json({ message: 'Ya existe un usuario con ese correo.' });
     return;
@@ -261,30 +279,27 @@ app.post('/api/users', requireAuth, async (req, res) => {
     .join('')
     .slice(0, 2)
     .toUpperCase();
-  const user = {
+  const user: UserRow = {
     id: createId('user'),
     email: parsed.data.email,
     name: parsed.data.name,
-    roleId: parsed.data.roleId,
+    role_id: parsed.data.roleId,
     avatar: parsed.data.avatar || initials || 'US',
-    customerId: parsed.data.roleId === 'role-client' ? parsed.data.customerId ?? null : null,
-    passwordHash: await bcrypt.hash(parsed.data.password, 10),
+    customer_id: parsed.data.roleId === 'role-client' ? parsed.data.customerId ?? null : null,
+    password_hash: await bcrypt.hash(parsed.data.password, 10),
   };
 
-  db.prepare(`
-    INSERT INTO users (id, email, name, role_id, avatar, customer_id, password_hash)
-    VALUES (@id, @email, @name, @roleId, @avatar, @customerId, @passwordHash)
-  `).run(user);
+  await insertUser(user);
 
   const appUser = {
     id: user.id,
     email: user.email,
     name: user.name,
-    roleId: user.roleId,
+    roleId: user.role_id,
     avatar: user.avatar,
-    customerId: user.customerId ?? undefined,
+    customerId: user.customer_id ?? undefined,
   };
-  syncUserIntoAppState(appUser);
+  await syncUserIntoAppState(appUser);
   res.status(201).json({ user: appUser });
 });
 
@@ -306,53 +321,45 @@ app.put('/api/users/:userId', requireAuth, async (req, res) => {
     return;
   }
 
-  const current = db.prepare('SELECT * FROM users WHERE id = ?').get(req.params.userId) as UserRow | undefined;
+  const current = await getUserById(String(req.params.userId));
   if (!current) {
     res.status(404).json({ message: 'Usuario no encontrado.' });
     return;
   }
 
-  const duplicate = db.prepare('SELECT * FROM users WHERE email = ?').get(parsed.data.email) as UserRow | undefined;
+  const duplicate = await getUserByEmail(parsed.data.email);
   if (duplicate && duplicate.id !== current.id) {
     res.status(409).json({ message: 'Ya existe otro usuario con ese correo.' });
     return;
   }
 
   const passwordHash = parsed.data.password ? await bcrypt.hash(parsed.data.password, 10) : current.password_hash;
-  const next = {
+  const next: UserRow = {
     id: current.id,
     email: parsed.data.email,
     name: parsed.data.name,
-    roleId: parsed.data.roleId,
+    role_id: parsed.data.roleId,
     avatar: parsed.data.avatar || current.avatar,
-    customerId: parsed.data.roleId === 'role-client' ? parsed.data.customerId ?? null : null,
-    passwordHash,
+    customer_id: parsed.data.roleId === 'role-client' ? parsed.data.customerId ?? null : null,
+    password_hash: passwordHash,
   };
 
-  db.prepare(`
-    UPDATE users SET
-      email = @email,
-      name = @name,
-      role_id = @roleId,
-      avatar = @avatar,
-      customer_id = @customerId,
-      password_hash = @passwordHash
-    WHERE id = @id
-  `).run(next);
+  await updateUser(next);
 
   const appUser = {
     id: next.id,
     email: next.email,
     name: next.name,
-    roleId: next.roleId,
+    roleId: next.role_id,
     avatar: next.avatar,
-    customerId: next.customerId ?? undefined,
+    customerId: next.customer_id ?? undefined,
   };
-  syncUserIntoAppState(appUser);
+  await syncUserIntoAppState(appUser);
   res.json({ user: appUser });
 });
 
-app.delete('/api/users/:userId', requireAuth, (req, res) => {
+app.delete('/api/users/:userId', requireAuth, async (req, res, next) => {
+  try {
   if (!requireSystemAdminOnly(req, res)) return;
   const userId = String(req.params.userId);
   if (userId === req.sessionUser?.id) {
@@ -360,12 +367,16 @@ app.delete('/api/users/:userId', requireAuth, (req, res) => {
     return;
   }
 
-  db.prepare('DELETE FROM users WHERE id = ?').run(userId);
-  removeUserFromAppState(userId);
+  await deleteUser(userId);
+  await removeUserFromAppState(userId);
   res.json({ ok: true });
+  } catch (error) {
+    next(error);
+  }
 });
 
-app.put('/api/app-state', requireAuth, requireAdmin, (req, res) => {
+app.put('/api/app-state', requireAuth, requireAdmin, async (req, res, next) => {
+  try {
   const schema = z.custom<AppData>();
   const parsed = schema.safeParse(req.body);
   if (!parsed.success) {
@@ -373,15 +384,19 @@ app.put('/api/app-state', requireAuth, requireAdmin, (req, res) => {
     return;
   }
 
-  saveAppData(parsed.data);
+  await saveAppData(parsed.data);
   res.json({
     ok: true,
     appData: parsed.data,
     sessionUser: req.sessionUser,
   });
+  } catch (error) {
+    next(error);
+  }
 });
 
-app.post('/api/client/requests', requireAuth, (req, res) => {
+app.post('/api/client/requests', requireAuth, async (req, res, next) => {
+  try {
   if (req.sessionUser?.roleKind !== 'client') {
     res.status(403).json({ message: 'Solo el portal cliente puede crear esta solicitud.' });
     return;
@@ -400,8 +415,11 @@ app.post('/api/client/requests', requireAuth, (req, res) => {
     return;
   }
 
-  const appData = createClientLead(req.sessionUser, parsed.data);
+  const appData = await createClientLead(req.sessionUser, parsed.data);
   res.json({ appData, sessionUser: req.sessionUser });
+  } catch (error) {
+    next(error);
+  }
 });
 
 app.post('/api/upload', requireAuth, upload.single('file'), (req, res) => {
