@@ -1,4 +1,4 @@
-import type { AppData, Lead, User } from '../types/entities';
+import type { AppData, HeroSlide, Lead, User, WebProduct } from '../types/entities';
 
 export interface SessionUser extends User {
   roleName: string;
@@ -70,6 +70,14 @@ export async function apiCreatePublicLead(formData: FormData): Promise<{ success
   }
 
   return response.json() as Promise<{ success?: boolean; message?: string; lead: Lead }>;
+}
+
+export async function apiGetPublicHeroSlides() {
+  return request<{ slides: HeroSlide[] }>('/api/public/hero-slides');
+}
+
+export async function apiGetPublicProducts(featured = false) {
+  return request<{ products: WebProduct[] }>(featured ? '/api/public/products?featured=true' : '/api/public/products');
 }
 
 export async function apiUploadFile(file: File): Promise<{ url: string; name: string; type: string; size: number }> {

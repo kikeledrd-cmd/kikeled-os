@@ -5,6 +5,8 @@ import {
   Check,
   ChevronRight,
   CircuitBoard,
+  Pause,
+  Play,
   Eye,
   Gem,
   Heart,
@@ -17,13 +19,16 @@ import {
   Sparkles,
   Zap,
 } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Logo } from '../../components/brand/Logo';
 import { QuoteForm } from '../../components/landing/QuoteForm';
+import { apiGetPublicHeroSlides, apiGetPublicProducts } from '../../lib/api';
 import { brand } from '../../lib/brand';
 import { packages } from '../../lib/packages';
-import { products } from '../../lib/products';
 import { currency } from '../../lib/utils';
+import { defaultHeroSlides, defaultWebProducts } from '../../data/webContent';
+import type { HeroSlide, WebProduct } from '../../types/entities';
 
 const services = [
   { title: 'Letreros y fachadas', text: 'LED, cajas de luz, panaflex, 3D, acrílico y presencia exterior.', Icon: Eye, tone: 'red' },
@@ -63,6 +68,22 @@ export function HomePage() {
 }
 
 function Hero() {
+  const [slides, setSlides] = useState<HeroSlide[]>(defaultHeroSlides);
+
+  useEffect(() => {
+    let active = true;
+    apiGetPublicHeroSlides()
+      .then((response) => {
+        if (active && response.slides.length) setSlides(response.slides);
+      })
+      .catch(() => {
+        if (active) setSlides(defaultHeroSlides);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
   return (
     <section className="k-hero">
       <div className="k-hero-copy">
@@ -99,48 +120,73 @@ function Hero() {
         </div>
         <p className="k-hero-footnote">{brand.name} - Estudio físico-digital para negocios modernos en RD</p>
       </div>
-      <HeroVisual />
+      <HeroCarousel slides={slides} />
     </section>
   );
 }
 
-function HeroVisual() {
+function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
+  const visibleSlides = slides.length ? slides : defaultHeroSlides;
+  const [index, setIndex] = useState(0);
+  const [isPlaying, setIsPlaying] = useState(true);
+  const activeSlide = visibleSlides[index] ?? visibleSlides[0];
+
+  useEffect(() => {
+    if (!isPlaying || visibleSlides.length < 2) return;
+    const timer = window.setInterval(() => {
+      setIndex((current) => (current + 1) % visibleSlides.length);
+    }, 5200);
+    return () => window.clearInterval(timer);
+  }, [isPlaying, visibleSlides.length]);
+
+  useEffect(() => {
+    setIndex(0);
+  }, [visibleSlides.length]);
+
+  function go(direction: 1 | -1) {
+    setIndex((current) => (current + direction + visibleSlides.length) % visibleSlides.length);
+  }
+
   return (
-    <div className="k-hero-visual" aria-label="Mockup comercial de Kikeled">
-      <div className="k-building">
-        <div className="k-building-roof" />
-        <div className="k-neon-sign">
-          <span>K</span>
-          <strong>TU MARCA</strong>
-          <small>SIGNATURE STORE</small>
-        </div>
-        <div className="k-storefront">
-          <div />
-          <div />
-          <div />
-        </div>
+    <div className="k-hero-visual k-hero-carousel" aria-label="Carrusel principal Kikeled">
+      <div className="k-carousel-media">
+        {activeSlide.mediaType === 'video' ? (
+          <video src={activeSlide.mediaUrl} poster={activeSlide.thumbnailUrl} autoPlay={isPlaying} muted loop playsInline />
+        ) : (
+          <img src={activeSlide.mediaUrl} alt={activeSlide.title} />
+        )}
       </div>
-      <div className="k-laptop">
-        <div className="k-laptop-screen">
-          <div className="k-window-dots"><span /><span /><span /></div>
-          <p>Dashboard</p>
-          <strong>RD$ 34,800</strong>
-          <div className="k-chart">
-            <span /><span /><span /><span /><span /><span />
-          </div>
-          <div className="k-mini-cards">
-            <span />
-            <span />
-            <span />
-          </div>
-        </div>
+      <div className="k-carousel-copy">
+        {activeSlide.badge ? <span>{activeSlide.badge}</span> : null}
+        <h2>{activeSlide.title}</h2>
+        {activeSlide.subtitle ? <p>{activeSlide.subtitle}</p> : null}
+        {activeSlide.ctaLabel && activeSlide.ctaUrl ? (
+          <Link className="k-btn k-btn-red" to={activeSlide.ctaUrl}>
+            {activeSlide.ctaLabel} <ArrowRight size={15} />
+          </Link>
+        ) : null}
       </div>
-      <div className="k-phone">
-        <div className="k-phone-notch" />
-        <p>Mi Negocio</p>
-        <div className="k-chat k-chat-green">Cotizar fachada</div>
-        <div className="k-chat">Catálogo</div>
-        <div className="k-chat">Soporte</div>
+      <div className="k-carousel-controls">
+        <button type="button" onClick={() => go(-1)} aria-label="Slide anterior">
+          <ChevronRight size={18} />
+        </button>
+        <div>
+          {visibleSlides.map((slide, slideIndex) => (
+            <button
+              key={slide.id}
+              type="button"
+              className={slideIndex === index ? 'is-active' : ''}
+              onClick={() => setIndex(slideIndex)}
+              aria-label={`Ver slide ${slideIndex + 1}`}
+            />
+          ))}
+        </div>
+        <button type="button" onClick={() => setIsPlaying((value) => !value)} aria-label={isPlaying ? 'Pausar carrusel' : 'Reproducir carrusel'}>
+          {isPlaying ? <Pause size={16} /> : <Play size={16} />}
+        </button>
+        <button type="button" onClick={() => go(1)} aria-label="Slide siguiente">
+          <ChevronRight size={18} />
+        </button>
       </div>
     </div>
   );
@@ -189,6 +235,28 @@ function Method() {
 }
 
 function Catalog() {
+  const [products, setProducts] = useState<WebProduct[]>(defaultWebProducts.filter((product) => product.isFeatured));
+
+  useEffect(() => {
+    let active = true;
+    apiGetPublicProducts(true)
+      .then((response) => {
+        if (active && response.products.length) setProducts(response.products);
+      })
+      .catch(() => {
+        if (active) setProducts(defaultWebProducts.filter((product) => product.isActive && product.isFeatured));
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const visibleProducts = useMemo(() => {
+    const activeProducts = products.filter((product) => product.isActive);
+    const fallbackProducts = defaultWebProducts.filter((product) => product.isActive && product.isFeatured);
+    return (activeProducts.length ? activeProducts : fallbackProducts).sort((a, b) => a.order - b.order).slice(0, 6);
+  }, [products]);
+
   return (
     <section id="catalogo" className="k-section">
       <div className="k-section-split">
@@ -196,13 +264,15 @@ function Catalog() {
         <Link className="k-btn k-btn-dark" to="/catalogo">Ver catálogo completo</Link>
       </div>
       <div className="k-product-grid">
-        {products.slice(0, 6).map((product, index) => (
+        {visibleProducts.map((product, index) => (
           <article className="k-product-card" key={product.id}>
             <div className={`k-product-media k-media-${index % 6}`}>
+              {product.thumbnailUrl ? <img src={product.thumbnailUrl} alt={product.name} /> : null}
               <span>{product.category}</span>
             </div>
             <h3>{product.name}</h3>
-            <p>Desde {currency(product.priceFrom)}</p>
+            <p>{product.shortDescription}</p>
+            <strong>Desde {currency(product.priceFrom)}{product.priceUnit ? ` / ${product.priceUnit}` : ''}</strong>
             <Link to={`/cotizar?producto=${encodeURIComponent(product.name)}`} aria-label={`Cotizar ${product.name}`}>
               <ChevronRight size={16} />
             </Link>

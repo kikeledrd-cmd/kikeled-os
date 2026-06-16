@@ -1,7 +1,8 @@
-import { FormEvent, useMemo, useState } from 'react';
+import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { CheckCircle2, Send } from 'lucide-react';
-import { apiCreatePublicLead } from '../../lib/api';
-import { products } from '../../lib/products';
+import { defaultWebProducts } from '../../data/webContent';
+import { apiCreatePublicLead, apiGetPublicProducts } from '../../lib/api';
+import type { WebProduct } from '../../types/entities';
 
 const urgencyOptions = ['Normal', 'Esta semana', 'Urgente', 'Solo explorando'];
 const businessTypes = ['Restaurante', 'Barbería', 'Salón', 'Tienda', 'Oficina', 'Gaming/streaming', 'Emprendimiento', 'Otro'];
@@ -9,7 +10,26 @@ const businessTypes = ['Restaurante', 'Barbería', 'Salón', 'Tienda', 'Oficina'
 export function QuoteForm({ selectedProduct = '', compact = false }: { selectedProduct?: string; compact?: boolean }) {
   const [status, setStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
   const [message, setMessage] = useState('');
-  const productOptions = useMemo(() => products.map((product) => ({ id: product.id, name: product.name })), []);
+  const [products, setProducts] = useState<WebProduct[]>(defaultWebProducts);
+  const productOptions = useMemo(
+    () => products.filter((product) => product.isActive).map((product) => ({ id: product.id, name: product.name })),
+    [products],
+  );
+
+  useEffect(() => {
+    let active = true;
+    apiGetPublicProducts()
+      .then((response) => {
+        if (active && response.products.length) setProducts(response.products);
+      })
+      .catch(() => {
+        if (active) setProducts(defaultWebProducts);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();

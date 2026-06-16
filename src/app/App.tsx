@@ -30,6 +30,7 @@ import { ReportsPage } from '../pages/admin/ReportsPage';
 import { ServicesPage } from '../pages/admin/ServicesPage';
 import { SettingsPage } from '../pages/admin/SettingsPage';
 import { UsersManagementPage } from '../pages/admin/UsersManagementPage';
+import { WebContentPage } from '../pages/admin/WebContentPage';
 import { ClientHomePage } from '../pages/client/ClientHomePage';
 import { ClientInvoicesPage } from '../pages/client/ClientInvoicesPage';
 import { ClientOrdersPage } from '../pages/client/ClientOrdersPage';
@@ -78,6 +79,7 @@ export default function App() {
       <Route path="/admin/clientes" element={<ProtectedRoute allow={['admin', 'sales']}><AdminLayout><CustomersPage /></AdminLayout></ProtectedRoute>} />
       <Route path="/admin/clientes/:customerId" element={<ProtectedRoute allow={['admin', 'sales']}><AdminLayout><CustomerDetailPage /></AdminLayout></ProtectedRoute>} />
       <Route path="/admin/banco-clientes" element={<ProtectedRoute allow={['admin', 'sales']}><AdminLayout><ClientBankPage /></AdminLayout></ProtectedRoute>} />
+      <Route path="/admin/contenido" element={<ProtectedRoute allow={['admin']}><AdminLayout><WebContentPage /></AdminLayout></ProtectedRoute>} />
       <Route path="/admin/servicios" element={<ProtectedRoute allow={['admin']}><AdminLayout><ServicesPage /></AdminLayout></ProtectedRoute>} />
       <Route path="/admin/motor-precios" element={<ProtectedRoute allow={['admin']}><AdminLayout><PricingEnginePage /></AdminLayout></ProtectedRoute>} />
       <Route path="/admin/configuracion/precios" element={<ProtectedRoute allow={['admin']}><AdminLayout><PricingRulesSettingsPage /></AdminLayout></ProtectedRoute>} />

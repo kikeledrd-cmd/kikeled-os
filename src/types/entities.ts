@@ -304,6 +304,47 @@ export interface Attachment {
   url: string;
 }
 
+export interface HeroSlide {
+  id: string;
+  title: string;
+  subtitle?: string;
+  mediaType: 'image' | 'video';
+  mediaUrl: string;
+  thumbnailUrl?: string;
+  ctaLabel?: string;
+  ctaUrl?: string;
+  badge?: string;
+  order: number;
+  isActive: boolean;
+  startsAt?: string;
+  endsAt?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface WebProduct {
+  id: string;
+  name: string;
+  slug: string;
+  category: string;
+  shortDescription: string;
+  description?: string;
+  thumbnailUrl?: string;
+  galleryUrls?: string[];
+  priceFrom: number;
+  priceUnit?: string;
+  materials?: string[];
+  sizes?: string[];
+  deliveryTime?: string;
+  details?: string[];
+  ctaLabel?: string;
+  isFeatured: boolean;
+  isActive: boolean;
+  order: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Customer {
   id: string;
   name: string;
@@ -339,4 +380,6 @@ export interface AppData {
   premiumBenefitUsage: PremiumBenefitUsage[];
   activities: Activity[];
   attachments: Attachment[];
+  heroSlides: HeroSlide[];
+  webProducts: WebProduct[];
 }

@@ -16,6 +16,8 @@ import {
   QuoteItem,
   Service,
   ServiceCategory,
+  HeroSlide,
+  WebProduct,
 } from '../types/entities';
 
 export type AuthStatus = 'loading' | 'authenticated' | 'anonymous';
@@ -73,6 +75,10 @@ export interface AppState extends AppData {
   addServiceCategory: (category: Omit<ServiceCategory, 'id'>) => Promise<string>;
   addService: (service: Omit<Service, 'id'>) => Promise<string>;
   updateService: (serviceId: string, patch: Partial<Omit<Service, 'id'>>) => Promise<void>;
+  upsertHeroSlide: (slide: HeroSlide) => Promise<void>;
+  deleteHeroSlide: (slideId: string) => Promise<void>;
+  upsertWebProduct: (product: WebProduct) => Promise<void>;
+  deleteWebProduct: (productId: string) => Promise<void>;
 
   resetDemo: () => Promise<void>;
 }

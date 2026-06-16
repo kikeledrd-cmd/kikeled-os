@@ -1,41 +1,50 @@
-import { cn } from '../../lib/utils';
 import { leadStatusLabels } from '../../lib/leadStatus';
 
-const toneMap: Record<string, string> = {
-  nuevo: 'bg-sky-500/15 text-sky-300 border-sky-400/30',
-  contactado: 'bg-blue-500/15 text-blue-300 border-blue-400/30',
-  interesado: 'bg-cyan-500/15 text-cyan-300 border-cyan-400/30',
-  en_cotizacion: 'bg-violet-500/15 text-violet-300 border-violet-400/30',
-  negociación: 'bg-amber-500/15 text-amber-300 border-amber-400/30',
-  aprobado: 'bg-emerald-500/15 text-emerald-300 border-emerald-400/30',
-  en_produccion: 'bg-fuchsia-500/15 text-fuchsia-200 border-fuchsia-400/30',
-  instalado: 'bg-lime-500/15 text-lime-300 border-lime-400/30',
-  cerrado: 'bg-slate-500/15 text-slate-300 border-slate-400/30',
-  perdida: 'bg-rose-500/15 text-rose-300 border-rose-400/30',
-  perdido: 'bg-rose-500/15 text-rose-300 border-rose-400/30',
-  pendiente: 'bg-amber-500/15 text-amber-300 border-amber-400/30',
-  pagado: 'bg-emerald-500/15 text-emerald-300 border-emerald-400/30',
-  abonado: 'bg-cyan-500/15 text-cyan-300 border-cyan-400/30',
-  rechazada: 'bg-rose-500/15 text-rose-300 border-rose-400/30',
-  facturada: 'bg-lime-500/15 text-lime-300 border-lime-400/30',
-  'convertida en orden': 'bg-fuchsia-500/15 text-fuchsia-300 border-fuchsia-400/30',
-  diseño: 'bg-violet-500/15 text-violet-300 border-violet-400/30',
-  corte: 'bg-blue-500/15 text-blue-300 border-blue-400/30',
-  impresión: 'bg-sky-500/15 text-sky-300 border-sky-400/30',
-  ensamblaje: 'bg-indigo-500/15 text-indigo-300 border-indigo-400/30',
-  'listo para instalar': 'bg-lime-500/15 text-lime-300 border-lime-400/30',
-  instalación: 'bg-orange-500/15 text-orange-300 border-orange-400/30',
-  entregado: 'bg-emerald-500/15 text-emerald-300 border-emerald-400/30',
-  cerrada: 'bg-slate-500/15 text-slate-300 border-slate-400/30',
-  Base: 'bg-slate-500/15 text-slate-200 border-slate-400/30',
-  Neon: 'bg-glow/15 text-cyan-200 border-cyan-400/30',
-  'RGB Elite': 'bg-rose-500/15 text-rose-200 border-rose-400/30',
+const baseTone = {
+  color: '#FFFFFF',
+  borderColor: 'rgba(255, 255, 255, 0.18)',
+  background: 'rgba(255, 255, 255, 0.08)',
 };
+
+const toneMap: Record<string, typeof baseTone> = {
+  nuevo: { color: '#00D6FF', borderColor: 'rgba(0, 214, 255, 0.35)', background: 'rgba(0, 214, 255, 0.12)' },
+  contactado: { color: '#2962FF', borderColor: 'rgba(41, 98, 255, 0.38)', background: 'rgba(41, 98, 255, 0.12)' },
+  interesado: { color: '#00FF85', borderColor: 'rgba(0, 255, 133, 0.35)', background: 'rgba(0, 255, 133, 0.1)' },
+  en_cotizacion: { color: '#FF8A00', borderColor: 'rgba(255, 138, 0, 0.35)', background: 'rgba(255, 138, 0, 0.12)' },
+  negociacion: { color: '#E5FF00', borderColor: 'rgba(229, 255, 0, 0.35)', background: 'rgba(229, 255, 0, 0.1)' },
+  aprobado: { color: '#00FF85', borderColor: 'rgba(0, 255, 133, 0.35)', background: 'rgba(0, 255, 133, 0.1)' },
+  en_produccion: { color: '#FF1E1E', borderColor: 'rgba(255, 30, 30, 0.35)', background: 'rgba(255, 30, 30, 0.12)' },
+  instalado: { color: '#00FF85', borderColor: 'rgba(0, 255, 133, 0.35)', background: 'rgba(0, 255, 133, 0.1)' },
+  cerrado: baseTone,
+  perdida: { color: '#FF1E1E', borderColor: 'rgba(255, 30, 30, 0.35)', background: 'rgba(255, 30, 30, 0.12)' },
+  perdido: { color: '#FF1E1E', borderColor: 'rgba(255, 30, 30, 0.35)', background: 'rgba(255, 30, 30, 0.12)' },
+  pendiente: { color: '#FF8A00', borderColor: 'rgba(255, 138, 0, 0.35)', background: 'rgba(255, 138, 0, 0.12)' },
+  pagado: { color: '#00FF85', borderColor: 'rgba(0, 255, 133, 0.35)', background: 'rgba(0, 255, 133, 0.1)' },
+  abonado: { color: '#00D6FF', borderColor: 'rgba(0, 214, 255, 0.35)', background: 'rgba(0, 214, 255, 0.12)' },
+  rechazada: { color: '#FF1E1E', borderColor: 'rgba(255, 30, 30, 0.35)', background: 'rgba(255, 30, 30, 0.12)' },
+  facturada: { color: '#E5FF00', borderColor: 'rgba(229, 255, 0, 0.35)', background: 'rgba(229, 255, 0, 0.1)' },
+  diseno: { color: '#2962FF', borderColor: 'rgba(41, 98, 255, 0.38)', background: 'rgba(41, 98, 255, 0.12)' },
+  corte: { color: '#00D6FF', borderColor: 'rgba(0, 214, 255, 0.35)', background: 'rgba(0, 214, 255, 0.12)' },
+  impresion: { color: '#E5FF00', borderColor: 'rgba(229, 255, 0, 0.35)', background: 'rgba(229, 255, 0, 0.1)' },
+  ensamblaje: { color: '#FF8A00', borderColor: 'rgba(255, 138, 0, 0.35)', background: 'rgba(255, 138, 0, 0.12)' },
+  instalacion: { color: '#FF1E1E', borderColor: 'rgba(255, 30, 30, 0.35)', background: 'rgba(255, 30, 30, 0.12)' },
+  entregado: { color: '#00FF85', borderColor: 'rgba(0, 255, 133, 0.35)', background: 'rgba(0, 255, 133, 0.1)' },
+  cerrada: baseTone,
+  Base: baseTone,
+  Neon: { color: '#00D6FF', borderColor: 'rgba(0, 214, 255, 0.35)', background: 'rgba(0, 214, 255, 0.12)' },
+  'RGB Elite': { color: '#FF1E1E', borderColor: 'rgba(255, 30, 30, 0.35)', background: 'rgba(255, 30, 30, 0.12)' },
+};
+
+function normalizeKey(label: string) {
+  return label.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase();
+}
 
 export function StatusBadge({ label }: { label: string }) {
   const displayLabel = label in leadStatusLabels ? leadStatusLabels[label as keyof typeof leadStatusLabels] : label;
+  const tone = toneMap[label] ?? toneMap[normalizeKey(label)] ?? baseTone;
+
   return (
-    <span className={cn('inline-flex rounded-full border px-3 py-1 text-xs font-medium capitalize', toneMap[label] ?? 'border-white/10 bg-white/5 text-white')}>
+    <span className="inline-flex rounded-full border px-3 py-1 text-xs font-medium capitalize" style={tone}>
       {displayLabel}
     </span>
   );

@@ -9,7 +9,7 @@ export function WorkspaceHeader() {
   if (!user || !role) return null;
 
   return (
-    <div className="flex flex-col gap-4 rounded-3xl border border-white/10 bg-white/5 p-4 md:flex-row md:items-center md:justify-between">
+    <div className="k-admin-header flex flex-col gap-4 rounded-3xl border border-white/10 bg-white/5 p-4 md:flex-row md:items-center md:justify-between">
       <div>
         <p className="label mb-2">Sesión activa</p>
         <div className="flex items-center gap-3">
@@ -23,7 +23,7 @@ export function WorkspaceHeader() {
         </div>
       </div>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        <div className="flex items-center gap-2 rounded-2xl border border-white/10 bg-ink/60 px-3 py-2 text-sm text-soft">
+        <div className="k-admin-auth-chip flex items-center gap-2 rounded-2xl border border-white/10 bg-ink/60 px-3 py-2 text-sm text-soft">
           <Shield size={16} />
           Auth real con sesión backend
         </div>

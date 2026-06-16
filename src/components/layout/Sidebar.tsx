@@ -18,8 +18,8 @@ export function Sidebar({
   items: NavItem[];
 }) {
   return (
-    <aside className="glass flex min-h-screen w-full max-w-72 flex-col border-r border-white/10 px-5 py-6">
-      <div className="rounded-3xl border border-white/10 bg-white/5 p-5">
+    <aside className="k-admin-sidebar glass flex min-h-screen w-full max-w-72 flex-col border-r border-white/10 px-5 py-6">
+      <div className="k-admin-sidebar-brand rounded-3xl border border-white/10 bg-white/5 p-5">
         <p className="label">Kikeled</p>
         <h2 className="mt-3 text-2xl font-semibold text-white">{title}</h2>
         <p className="mt-2 text-sm text-soft">{subtitle}</p>
@@ -34,8 +34,8 @@ export function Sidebar({
               end={item.to === '/admin' || item.to === '/portal'}
               className={({ isActive }) =>
                 cn(
-                  'flex items-center gap-3 rounded-2xl px-4 py-3 text-sm transition',
-                  isActive ? 'bg-white text-ink' : 'text-soft hover:bg-white/5 hover:text-white',
+                  'k-admin-nav-link flex items-center gap-3 rounded-2xl px-4 py-3 text-sm transition',
+                  isActive ? 'is-active bg-white text-ink' : 'text-soft hover:bg-white/5 hover:text-white',
                 )
               }
             >
@@ -45,7 +45,7 @@ export function Sidebar({
           );
         })}
       </nav>
-      <div className="rounded-3xl border border-glow/20 bg-glow/10 p-4 text-sm text-cyan-100">
+      <div className="k-admin-sidebar-note rounded-3xl border border-glow/20 bg-glow/10 p-4 text-sm text-cyan-100">
         Kikeled OS enlaza CRM, producción, facturación y fidelización en un mismo flujo.
       </div>
     </aside>

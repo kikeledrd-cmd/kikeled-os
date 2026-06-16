@@ -4,7 +4,12 @@ import { createId } from '../../lib/utils';
 import { AppState } from '../types';
 import { syncAdminState } from '../utils';
 
-export const createSystemSlice: StateCreator<AppState, [], [], Pick<AppState, 'resetDemo' | 'addServiceCategory' | 'addService' | 'updateService'>> = (set, get) => ({
+export const createSystemSlice: StateCreator<
+  AppState,
+  [],
+  [],
+  Pick<AppState, 'resetDemo' | 'addServiceCategory' | 'addService' | 'updateService' | 'upsertHeroSlide' | 'deleteHeroSlide' | 'upsertWebProduct' | 'deleteWebProduct'>
+> = (set, get) => ({
   addServiceCategory: async (category) => {
     const id = createId('cat');
     set((state) => ({
@@ -56,6 +61,69 @@ export const createSystemSlice: StateCreator<AppState, [], [], Pick<AppState, 'r
           : service,
       ),
     }));
+    await syncAdminState(get, set);
+  },
+
+  upsertHeroSlide: async (slide) => {
+    const now = new Date().toISOString();
+    set((state) => {
+      const exists = state.heroSlides.some((item) => item.id === slide.id);
+      const nextSlide = {
+        ...slide,
+        title: slide.title.trim(),
+        subtitle: slide.subtitle?.trim(),
+        mediaUrl: slide.mediaUrl.trim(),
+        thumbnailUrl: slide.thumbnailUrl?.trim(),
+        ctaLabel: slide.ctaLabel?.trim(),
+        ctaUrl: slide.ctaUrl?.trim(),
+        badge: slide.badge?.trim(),
+        updatedAt: now,
+        createdAt: slide.createdAt || now,
+      };
+      return {
+        heroSlides: exists
+          ? state.heroSlides.map((item) => (item.id === slide.id ? nextSlide : item))
+          : [...state.heroSlides, nextSlide],
+      };
+    });
+    await syncAdminState(get, set);
+  },
+
+  deleteHeroSlide: async (slideId) => {
+    set((state) => ({ heroSlides: state.heroSlides.filter((slide) => slide.id !== slideId) }));
+    await syncAdminState(get, set);
+  },
+
+  upsertWebProduct: async (product) => {
+    const now = new Date().toISOString();
+    set((state) => {
+      const exists = state.webProducts.some((item) => item.id === product.id);
+      const nextProduct = {
+        ...product,
+        name: product.name.trim(),
+        slug: product.slug.trim(),
+        category: product.category.trim(),
+        shortDescription: product.shortDescription.trim(),
+        description: product.description?.trim(),
+        thumbnailUrl: product.thumbnailUrl?.trim(),
+        ctaLabel: product.ctaLabel?.trim(),
+        materials: product.materials?.map((item) => item.trim()).filter(Boolean),
+        sizes: product.sizes?.map((item) => item.trim()).filter(Boolean),
+        details: product.details?.map((item) => item.trim()).filter(Boolean),
+        updatedAt: now,
+        createdAt: product.createdAt || now,
+      };
+      return {
+        webProducts: exists
+          ? state.webProducts.map((item) => (item.id === product.id ? nextProduct : item))
+          : [...state.webProducts, nextProduct],
+      };
+    });
+    await syncAdminState(get, set);
+  },
+
+  deleteWebProduct: async (productId) => {
+    set((state) => ({ webProducts: state.webProducts.filter((product) => product.id !== productId) }));
     await syncAdminState(get, set);
   },
 

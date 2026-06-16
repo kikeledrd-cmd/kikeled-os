@@ -1,4 +1,5 @@
 import type { AppData } from '../types/entities.js';
+import { defaultHeroSlides, defaultWebProducts } from './webContent.js';
 
 export const demoData: AppData = {
   roles: [
@@ -132,4 +133,6 @@ export const demoData: AppData = {
     { id: 'att-1', customerId: 'cust-1', orderId: 'ord-1', name: 'Plano fachada imperial', type: 'pdf', url: '#' },
     { id: 'att-2', customerId: 'cust-2', quoteId: 'quote-2', name: 'Mockup Aura Beauty', type: 'jpg', url: '#' },
   ],
+  heroSlides: defaultHeroSlides,
+  webProducts: defaultWebProducts,
 };

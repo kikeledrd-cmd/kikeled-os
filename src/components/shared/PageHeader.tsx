@@ -12,7 +12,7 @@ export function PageHeader({
   action?: ReactNode;
 }) {
   return (
-    <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+    <div className="k-admin-page-header flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
       <div className="max-w-3xl">
         <p className="label mb-3">{eyebrow}</p>
         <h1 className="text-3xl font-semibold tracking-tight text-white md:text-4xl">{title}</h1>

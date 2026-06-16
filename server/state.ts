@@ -1,5 +1,6 @@
 import { createId } from '../src/lib/utils.js';
 import { normalizeLeadStatus } from '../src/lib/leadStatus.js';
+import { defaultHeroSlides, defaultWebProducts } from '../src/data/webContent.js';
 import type { AppData, Lead } from '../src/types/entities.js';
 import { getAppStateData, saveAppStateData } from './db.js';
 import type { SessionUser } from './types.js';
@@ -9,6 +10,8 @@ export async function loadAppData(): Promise<AppData> {
   const appData = JSON.parse(data) as AppData;
   return {
     ...appData,
+    heroSlides: appData.heroSlides ?? defaultHeroSlides,
+    webProducts: appData.webProducts ?? defaultWebProducts,
     leads: appData.leads.map((lead) => ({
       ...lead,
       status: normalizeLeadStatus(lead.status),

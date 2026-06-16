@@ -96,6 +96,54 @@ const publicWriteLimiter = rateLimit({
   message: { message: 'Demasiadas solicitudes. Intenta de nuevo mas tarde.' },
 });
 
+const heroSlideSchema = z.object({
+  id: z.string().min(1).optional(),
+  title: z.string().min(2),
+  subtitle: z.string().optional(),
+  mediaType: z.enum(['image', 'video']),
+  mediaUrl: z.string().min(1),
+  thumbnailUrl: z.string().optional(),
+  ctaLabel: z.string().optional(),
+  ctaUrl: z.string().optional(),
+  badge: z.string().optional(),
+  order: z.coerce.number().int().min(0),
+  isActive: z.boolean(),
+  startsAt: z.string().optional(),
+  endsAt: z.string().optional(),
+  createdAt: z.string().optional(),
+  updatedAt: z.string().optional(),
+});
+
+const webProductSchema = z.object({
+  id: z.string().min(1).optional(),
+  name: z.string().min(2),
+  slug: z.string().min(2),
+  category: z.string().min(2),
+  shortDescription: z.string().min(5),
+  description: z.string().optional(),
+  thumbnailUrl: z.string().optional(),
+  galleryUrls: z.array(z.string()).optional(),
+  priceFrom: z.coerce.number().min(0),
+  priceUnit: z.string().optional(),
+  materials: z.array(z.string()).optional(),
+  sizes: z.array(z.string()).optional(),
+  deliveryTime: z.string().optional(),
+  details: z.array(z.string()).optional(),
+  ctaLabel: z.string().optional(),
+  isFeatured: z.boolean(),
+  isActive: z.boolean(),
+  order: z.coerce.number().int().min(0),
+  createdAt: z.string().optional(),
+  updatedAt: z.string().optional(),
+});
+
+function isWithinPublishWindow(item: { startsAt?: string; endsAt?: string }) {
+  const now = Date.now();
+  const startsAt = item.startsAt ? new Date(item.startsAt).getTime() : null;
+  const endsAt = item.endsAt ? new Date(item.endsAt).getTime() : null;
+  return (!startsAt || startsAt <= now) && (!endsAt || endsAt >= now);
+}
+
 app.use(
   helmet({
     crossOriginResourcePolicy: { policy: 'same-site' },
@@ -178,6 +226,170 @@ app.post('/api/public/leads', publicWriteLimiter, upload.single('referenceFile')
   const referenceFileUrl = req.file ? `/uploads/${req.file.filename}` : undefined;
   const lead = await createPublicLead({ ...parsed.data, referenceFileUrl });
   res.status(201).json({ success: true, message: 'Lead creado correctamente', lead });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get('/api/public/hero-slides', async (_req, res, next) => {
+  try {
+    const appData = await loadAppData();
+    const slides = appData.heroSlides
+      .filter((slide) => slide.isActive && isWithinPublishWindow(slide))
+      .sort((a, b) => a.order - b.order);
+    res.json({ slides });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get('/api/public/products', async (req, res, next) => {
+  try {
+    const featuredOnly = String(req.query.featured ?? '') === 'true';
+    const appData = await loadAppData();
+    const activeProducts = appData.webProducts
+      .filter((product) => product.isActive)
+      .sort((a, b) => a.order - b.order);
+    const featured = activeProducts.filter((product) => product.isFeatured);
+    res.json({ products: featuredOnly ? (featured.length ? featured : activeProducts) : activeProducts });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get('/api/admin/hero-slides', requireAuth, requireAdmin, async (_req, res, next) => {
+  try {
+    if (!requireSystemAdminOnly(_req, res)) return;
+    const appData = await loadAppData();
+    res.json({ slides: [...appData.heroSlides].sort((a, b) => a.order - b.order) });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post('/api/admin/hero-slides', requireAuth, requireAdmin, async (req, res, next) => {
+  try {
+    if (!requireSystemAdminOnly(req, res)) return;
+    const parsed = heroSlideSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ message: 'Datos del slide inválidos.' });
+      return;
+    }
+    const now = new Date().toISOString();
+    const appData = await loadAppData();
+    const slide = {
+      ...parsed.data,
+      id: parsed.data.id ?? createId('hero'),
+      createdAt: parsed.data.createdAt ?? now,
+      updatedAt: now,
+    };
+    appData.heroSlides = [slide, ...appData.heroSlides.filter((item) => item.id !== slide.id)];
+    await saveAppData(appData);
+    res.status(201).json({ slide });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.patch('/api/admin/hero-slides/:slideId', requireAuth, requireAdmin, async (req, res, next) => {
+  try {
+    if (!requireSystemAdminOnly(req, res)) return;
+    const parsed = heroSlideSchema.partial().safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ message: 'Datos del slide inválidos.' });
+      return;
+    }
+    const appData = await loadAppData();
+    const current = appData.heroSlides.find((slide) => slide.id === req.params.slideId);
+    if (!current) {
+      res.status(404).json({ message: 'Slide no encontrado.' });
+      return;
+    }
+    const slide = { ...current, ...parsed.data, id: current.id, updatedAt: new Date().toISOString() };
+    appData.heroSlides = appData.heroSlides.map((item) => (item.id === slide.id ? slide : item));
+    await saveAppData(appData);
+    res.json({ slide });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.delete('/api/admin/hero-slides/:slideId', requireAuth, requireAdmin, async (req, res, next) => {
+  try {
+    if (!requireSystemAdminOnly(req, res)) return;
+    const appData = await loadAppData();
+    appData.heroSlides = appData.heroSlides.filter((slide) => slide.id !== req.params.slideId);
+    await saveAppData(appData);
+    res.json({ ok: true });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get('/api/admin/products', requireAuth, requireAdmin, async (_req, res, next) => {
+  try {
+    if (!requireSystemAdminOnly(_req, res)) return;
+    const appData = await loadAppData();
+    res.json({ products: [...appData.webProducts].sort((a, b) => a.order - b.order) });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post('/api/admin/products', requireAuth, requireAdmin, async (req, res, next) => {
+  try {
+    if (!requireSystemAdminOnly(req, res)) return;
+    const parsed = webProductSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ message: 'Datos del producto inválidos.' });
+      return;
+    }
+    const now = new Date().toISOString();
+    const appData = await loadAppData();
+    const product = {
+      ...parsed.data,
+      id: parsed.data.id ?? createId('prod'),
+      createdAt: parsed.data.createdAt ?? now,
+      updatedAt: now,
+    };
+    appData.webProducts = [product, ...appData.webProducts.filter((item) => item.id !== product.id)];
+    await saveAppData(appData);
+    res.status(201).json({ product });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.patch('/api/admin/products/:productId', requireAuth, requireAdmin, async (req, res, next) => {
+  try {
+    if (!requireSystemAdminOnly(req, res)) return;
+    const parsed = webProductSchema.partial().safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ message: 'Datos del producto inválidos.' });
+      return;
+    }
+    const appData = await loadAppData();
+    const current = appData.webProducts.find((product) => product.id === req.params.productId);
+    if (!current) {
+      res.status(404).json({ message: 'Producto no encontrado.' });
+      return;
+    }
+    const product = { ...current, ...parsed.data, id: current.id, updatedAt: new Date().toISOString() };
+    appData.webProducts = appData.webProducts.map((item) => (item.id === product.id ? product : item));
+    await saveAppData(appData);
+    res.json({ product });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.delete('/api/admin/products/:productId', requireAuth, requireAdmin, async (req, res, next) => {
+  try {
+    if (!requireSystemAdminOnly(req, res)) return;
+    const appData = await loadAppData();
+    appData.webProducts = appData.webProducts.filter((product) => product.id !== req.params.productId);
+    await saveAppData(appData);
+    res.json({ ok: true });
   } catch (error) {
     next(error);
   }

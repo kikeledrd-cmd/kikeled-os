@@ -1,4 +1,5 @@
 import type { AppData } from '../types/entities.js';
+import { defaultHeroSlides, defaultWebProducts } from './webContent.js';
 
 /**
  * Estructura base vacía para producción.
@@ -63,4 +64,6 @@ export const emptyData: AppData = {
   premiumBenefitUsage: [],
   activities: [],
   attachments: [],
+  heroSlides: defaultHeroSlides,
+  webProducts: defaultWebProducts,
 };

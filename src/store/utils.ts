@@ -34,6 +34,8 @@ export function extractAppData(state: AppState): AppData {
     premiumBenefitUsage: state.premiumBenefitUsage,
     activities: state.activities,
     attachments: state.attachments,
+    heroSlides: state.heroSlides,
+    webProducts: state.webProducts,
   };
 }
 
