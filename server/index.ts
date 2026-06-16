@@ -67,6 +67,20 @@ app.get('/api/health', (_req, res) => {
   res.json({ ok: true });
 });
 
+app.get('/api/debug/auth', (_req, res) => {
+  const userCount = db.prepare('SELECT COUNT(*) as count FROM users').get() as { count: number };
+  const adminUser = db.prepare('SELECT id, email, role_id FROM users WHERE email = ?').get('kike@kikeled.com') as
+    | { id: string; email: string; role_id: string }
+    | undefined;
+
+  res.json({
+    ok: true,
+    userCount: userCount.count,
+    adminUser: adminUser ? { id: adminUser.id, email: adminUser.email, roleId: adminUser.role_id } : null,
+    runtime: process.env.VERCEL ? 'vercel' : 'local',
+  });
+});
+
 app.post('/api/public/leads', upload.single('referenceFile'), (req, res) => {
   const parsed = z
     .object({
@@ -416,6 +430,15 @@ if (fs.existsSync(directClientDir) || fs.existsSync(previewDir)) {
     res.sendFile(indexPath);
   });
 }
+
+app.use((error: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  const message = error instanceof Error ? error.message : 'Error interno del servidor.';
+  console.error('Kikeled OS API error:', error);
+  res.status(500).json({
+    message: process.env.NODE_ENV === 'production' ? 'Error interno del servidor.' : message,
+    detail: process.env.NODE_ENV === 'production' ? undefined : message,
+  });
+});
 
 if (!process.env.VERCEL) {
   app.listen(PORT, () => {
