@@ -65,6 +65,15 @@ export const app = express();
 const PORT = Number(process.env.PORT ?? 4000);
 app.set('trust proxy', 1);
 
+if (process.env.VERCEL) {
+  app.use((req, _res, next) => {
+    if (!req.url.startsWith('/api')) {
+      req.url = `/api${req.url === '/' ? '' : req.url}`;
+    }
+    next();
+  });
+}
+
 const allowedOrigins = [
   'http://localhost:5173',
   'http://localhost:4000',
