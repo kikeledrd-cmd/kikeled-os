@@ -1,5 +1,6 @@
 import { FormEvent, useMemo, useState } from 'react';
 import { Eye, ImagePlus, PackagePlus, Save, Trash2 } from 'lucide-react';
+import { useShallow } from 'zustand/react/shallow';
 import { PageHeader } from '../../components/shared/PageHeader';
 import { SectionCard } from '../../components/shared/SectionCard';
 import { StatusBadge } from '../../components/shared/StatusBadge';
@@ -82,14 +83,16 @@ export function WebContentPage() {
     deleteHeroSlide,
     upsertWebProduct,
     deleteWebProduct,
-  } = useAppStore((state) => ({
-    heroSlides: state.heroSlides,
-    webProducts: state.webProducts,
-    upsertHeroSlide: state.upsertHeroSlide,
-    deleteHeroSlide: state.deleteHeroSlide,
-    upsertWebProduct: state.upsertWebProduct,
-    deleteWebProduct: state.deleteWebProduct,
-  }));
+  } = useAppStore(
+    useShallow((state) => ({
+      heroSlides: state.heroSlides,
+      webProducts: state.webProducts,
+      upsertHeroSlide: state.upsertHeroSlide,
+      deleteHeroSlide: state.deleteHeroSlide,
+      upsertWebProduct: state.upsertWebProduct,
+      deleteWebProduct: state.deleteWebProduct,
+    })),
+  );
 
   const sortedSlides = useMemo(() => [...heroSlides].sort((a, b) => a.order - b.order), [heroSlides]);
   const sortedProducts = useMemo(() => [...webProducts].sort((a, b) => a.order - b.order), [webProducts]);
