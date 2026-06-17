@@ -38,6 +38,8 @@ const allowedUploadMimeTypes = new Set([
   'image/png',
   'image/webp',
   'image/gif',
+  'video/mp4',
+  'video/webm',
   'application/pdf',
 ]);
 

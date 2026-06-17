@@ -1,9 +1,10 @@
-import { FormEvent, useMemo, useState } from 'react';
-import { Eye, ImagePlus, PackagePlus, Save, Trash2 } from 'lucide-react';
+import { ChangeEvent, FormEvent, useMemo, useState } from 'react';
+import { Eye, ImagePlus, ImageUp, PackagePlus, Save, Trash2 } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
 import { PageHeader } from '../../components/shared/PageHeader';
 import { SectionCard } from '../../components/shared/SectionCard';
 import { StatusBadge } from '../../components/shared/StatusBadge';
+import { apiUploadFile } from '../../lib/api';
 import { createId, currency } from '../../lib/utils';
 import { useAppStore } from '../../store/useAppStore';
 import type { HeroSlide, WebProduct } from '../../types/entities';
@@ -99,6 +100,8 @@ export function WebContentPage() {
   const [slide, setSlide] = useState<HeroSlide>(sortedSlides[0] ?? slideDraft());
   const [product, setProduct] = useState<WebProduct>(sortedProducts[0] ?? productDraft());
   const [status, setStatus] = useState('');
+  const [uploadingSlide, setUploadingSlide] = useState<'media' | 'thumbnail' | null>(null);
+  const [uploadingProduct, setUploadingProduct] = useState(false);
 
   async function saveSlide(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -151,6 +154,45 @@ export function WebContentPage() {
     setStatus('Producto eliminado.');
   }
 
+  async function uploadSlideAsset(event: ChangeEvent<HTMLInputElement>, target: 'media' | 'thumbnail') {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+
+    setUploadingSlide(target);
+    setStatus('');
+    try {
+      const uploaded = await apiUploadFile(file);
+      setSlide((current) => ({
+        ...current,
+        ...(target === 'media' ? { mediaUrl: uploaded.url } : { thumbnailUrl: uploaded.url }),
+      }));
+      setStatus(target === 'media' ? 'Imagen del hero subida. Guarda el slide para publicarla.' : 'Miniatura del hero subida. Guarda el slide para publicarla.');
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : 'No se pudo subir el archivo.');
+    } finally {
+      setUploadingSlide(null);
+    }
+  }
+
+  async function uploadProductThumbnail(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+
+    setUploadingProduct(true);
+    setStatus('');
+    try {
+      const uploaded = await apiUploadFile(file);
+      setProduct((current) => ({ ...current, thumbnailUrl: uploaded.url }));
+      setStatus('Miniatura subida. Guarda el producto para publicarla.');
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : 'No se pudo subir la miniatura.');
+    } finally {
+      setUploadingProduct(false);
+    }
+  }
+
   return (
     <div className="space-y-6">
       <PageHeader
@@ -188,8 +230,23 @@ export function WebContentPage() {
                 </select>
                 <input className="field" type="number" value={slide.order} onChange={(event) => setSlide({ ...slide, order: Number(event.target.value) })} placeholder="Orden" />
               </div>
-              <input className="field" value={slide.mediaUrl} onChange={(event) => setSlide({ ...slide, mediaUrl: event.target.value })} placeholder="URL de imagen o video" required />
-              <input className="field" value={slide.thumbnailUrl ?? ''} onChange={(event) => setSlide({ ...slide, thumbnailUrl: event.target.value })} placeholder="Miniatura opcional" />
+              <AssetPreview url={slide.mediaUrl} label="Vista del hero" type={slide.mediaType} />
+              <div className="k-upload-row">
+                <input className="field" value={slide.mediaUrl} onChange={(event) => setSlide({ ...slide, mediaUrl: event.target.value })} placeholder="URL de imagen o video" required />
+                <label className="btn-secondary">
+                  <ImageUp size={16} />
+                  {uploadingSlide === 'media' ? 'Subiendo...' : 'Subir archivo'}
+                  <input type="file" accept={slide.mediaType === 'video' ? 'video/mp4,video/webm' : 'image/*'} onChange={(event) => void uploadSlideAsset(event, 'media')} />
+                </label>
+              </div>
+              <div className="k-upload-row">
+                <input className="field" value={slide.thumbnailUrl ?? ''} onChange={(event) => setSlide({ ...slide, thumbnailUrl: event.target.value })} placeholder="Miniatura opcional" />
+                <label className="btn-secondary">
+                  <ImageUp size={16} />
+                  {uploadingSlide === 'thumbnail' ? 'Subiendo...' : 'Subir miniatura'}
+                  <input type="file" accept="image/*" onChange={(event) => void uploadSlideAsset(event, 'thumbnail')} />
+                </label>
+              </div>
               <div className="grid gap-3 md:grid-cols-2">
                 <input className="field" value={slide.badge ?? ''} onChange={(event) => setSlide({ ...slide, badge: event.target.value })} placeholder="Etiqueta" />
                 <input className="field" value={slide.ctaLabel ?? ''} onChange={(event) => setSlide({ ...slide, ctaLabel: event.target.value })} placeholder="Texto del botón" />
@@ -226,7 +283,15 @@ export function WebContentPage() {
               </div>
               <textarea className="field" value={product.shortDescription} onChange={(event) => setProduct({ ...product, shortDescription: event.target.value })} placeholder="Descripción corta" rows={2} required />
               <textarea className="field" value={product.description ?? ''} onChange={(event) => setProduct({ ...product, description: event.target.value })} placeholder="Descripción larga" rows={3} />
-              <input className="field" value={product.thumbnailUrl ?? ''} onChange={(event) => setProduct({ ...product, thumbnailUrl: event.target.value })} placeholder="URL de miniatura" />
+              <AssetPreview url={product.thumbnailUrl ?? ''} label="Vista de miniatura" type="image" />
+              <div className="k-upload-row">
+                <input className="field" value={product.thumbnailUrl ?? ''} onChange={(event) => setProduct({ ...product, thumbnailUrl: event.target.value })} placeholder="URL de miniatura" />
+                <label className="btn-secondary">
+                  <ImageUp size={16} />
+                  {uploadingProduct ? 'Subiendo...' : 'Subir miniatura'}
+                  <input type="file" accept="image/*" onChange={(event) => void uploadProductThumbnail(event)} />
+                </label>
+              </div>
               <div className="grid gap-3 md:grid-cols-3">
                 <input className="field" type="number" value={product.priceFrom} onChange={(event) => setProduct({ ...product, priceFrom: Number(event.target.value) })} placeholder="Precio desde" />
                 <input className="field" value={product.priceUnit ?? ''} onChange={(event) => setProduct({ ...product, priceUnit: event.target.value })} placeholder="Unidad" />
@@ -252,6 +317,17 @@ export function WebContentPage() {
           <span><StatusBadge label="Base" /> {sortedProducts.filter((item) => item.isActive).length} productos publicados</span>
         </div>
       </SectionCard>
+    </div>
+  );
+}
+
+function AssetPreview({ url, label, type }: { url?: string; label: string; type: 'image' | 'video' }) {
+  if (!url) return null;
+
+  return (
+    <div className="k-asset-preview">
+      {type === 'video' ? <video src={url} muted playsInline controls /> : <img src={url} alt={label} loading="lazy" />}
+      <span>{label}</span>
     </div>
   );
 }
