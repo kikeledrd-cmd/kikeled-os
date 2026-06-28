@@ -148,11 +148,20 @@ export function CatalogPage() {
 function ProductLightbox({ product, onClose }: { product: WebProduct; onClose: () => void }) {
   const images = uniqueImages(product);
   const specs = productSpecs(product);
-  const [activeImage, setActiveImage] = useState(images[0] ?? product.thumbnailUrl ?? '');
+  const [activeIndex, setActiveIndex] = useState(0);
+  const activeImage = images[activeIndex] ?? images[0] ?? product.thumbnailUrl ?? '';
 
   useEffect(() => {
-    setActiveImage(images[0] ?? product.thumbnailUrl ?? '');
+    setActiveIndex(0);
   }, [product.id]);
+
+  const showPreviousImage = () => {
+    setActiveIndex((currentIndex) => (currentIndex - 1 + images.length) % images.length);
+  };
+
+  const showNextImage = () => {
+    setActiveIndex((currentIndex) => (currentIndex + 1) % images.length);
+  };
 
   return (
     <div className="k-product-lightbox" role="dialog" aria-modal="true" aria-label={`Mockups de ${product.name}`}>
@@ -162,13 +171,20 @@ function ProductLightbox({ product, onClose }: { product: WebProduct; onClose: (
         <div className="k-product-lightbox-media">
           {activeImage ? <img src={activeImage} alt={product.name} /> : null}
           {images.length > 1 ? (
-            <div className="k-product-lightbox-thumbs">
-              {images.map((image, index) => (
-                <button key={`${product.id}-detail-${index}`} className={image === activeImage ? 'is-active' : ''} type="button" onClick={() => setActiveImage(image)}>
-                  <img src={image} alt={`${product.name} vista ${index + 1}`} />
-                </button>
-              ))}
-            </div>
+            <>
+              <div className="k-product-lightbox-controls" aria-label="Navegacion de imagenes">
+                <button type="button" onClick={showPreviousImage}>Anterior</button>
+                <span>{activeIndex + 1} / {images.length}</span>
+                <button type="button" onClick={showNextImage}>Siguiente</button>
+              </div>
+              <div className="k-product-lightbox-thumbs">
+                {images.map((image, index) => (
+                  <button key={`${product.id}-detail-${index}`} className={index === activeIndex ? 'is-active' : ''} type="button" onClick={() => setActiveIndex(index)}>
+                    <img src={image} alt={`${product.name} vista ${index + 1}`} />
+                  </button>
+                ))}
+              </div>
+            </>
           ) : null}
         </div>
         <div className="k-product-lightbox-content">
