@@ -15,6 +15,15 @@ export type UserRow = {
   password_hash: string;
 };
 
+export type MediaAssetRow = {
+  id: string;
+  filename: string;
+  mime_type: string;
+  size: number;
+  data: Buffer;
+  created_at: string;
+};
+
 type JsonDbState = {
   users: UserRow[];
   appState: {
@@ -222,6 +231,15 @@ export async function initDatabase() {
         updated_at TEXT NOT NULL
       );
 
+      CREATE TABLE IF NOT EXISTS media_assets (
+        id TEXT PRIMARY KEY,
+        filename TEXT NOT NULL,
+        mime_type TEXT NOT NULL,
+        size INTEGER NOT NULL,
+        data BYTEA NOT NULL,
+        created_at TEXT NOT NULL
+      );
+
       CREATE INDEX IF NOT EXISTS users_email_idx ON users (email);
       CREATE INDEX IF NOT EXISTS users_customer_id_idx ON users (customer_id);
     `);
@@ -230,6 +248,8 @@ export async function initDatabase() {
       ALTER TABLE app_state ENABLE ROW LEVEL SECURITY;
       REVOKE ALL ON TABLE users FROM anon, authenticated;
       REVOKE ALL ON TABLE app_state FROM anon, authenticated;
+      ALTER TABLE media_assets ENABLE ROW LEVEL SECURITY;
+      REVOKE ALL ON TABLE media_assets FROM anon, authenticated;
     `);
   } else {
     localDb!.exec(`
@@ -247,6 +267,15 @@ export async function initDatabase() {
         id INTEGER PRIMARY KEY CHECK (id = 1),
         data TEXT NOT NULL,
         updated_at TEXT NOT NULL
+      );
+
+      CREATE TABLE IF NOT EXISTS media_assets (
+        id TEXT PRIMARY KEY,
+        filename TEXT NOT NULL,
+        mime_type TEXT NOT NULL,
+        size INTEGER NOT NULL,
+        data BYTEA NOT NULL,
+        created_at TEXT NOT NULL
       );
     `);
   }
@@ -412,4 +441,25 @@ async function insertAppState(data: string, updatedAt: string) {
     return;
   }
   localDb!.prepare('INSERT INTO app_state (id, data, updated_at) VALUES (1, ?, ?)').run(data, updatedAt);
+}
+
+export async function insertMediaAsset(asset: MediaAssetRow) {
+  if (postgresPool) {
+    await postgresQuery(
+      `
+        INSERT INTO media_assets (id, filename, mime_type, size, data, created_at)
+        VALUES ($1, $2, $3, $4, $5, $6)
+      `,
+      [asset.id, asset.filename, asset.mime_type, asset.size, asset.data, asset.created_at],
+    );
+    return;
+  }
+}
+
+export async function getMediaAsset(assetId: string) {
+  if (postgresPool) {
+    const result = await postgresQuery<MediaAssetRow>('SELECT * FROM media_assets WHERE id = $1', [assetId]);
+    return result.rows[0];
+  }
+  return undefined;
 }

@@ -12,10 +12,12 @@ import { clearAuthCookie, getSessionUser, readAuthPayload, requireAdmin, require
 import {
   deleteUser,
   getDatabaseMode,
+  getMediaAsset,
   getUserByEmail,
   getUserById,
   getUserCount,
   initDatabase,
+  insertMediaAsset,
   insertUser,
   listUsers,
   updateUser,
@@ -42,8 +44,8 @@ const allowedUploadMimeTypes = new Set([
   'video/webm',
   'application/pdf',
 ]);
-const embeddedImageMimeTypes = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
-const embeddedImageMaxSize = 2 * 1024 * 1024;
+const persistentImageMimeTypes = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
+const maxUploadSize = 50 * 1024 * 1024;
 
 const upload = multer({
   storage: multer.diskStorage({
@@ -53,7 +55,7 @@ const upload = multer({
       cb(null, `${unique}-${file.originalname}`);
     },
   }),
-  limits: { fileSize: 10 * 1024 * 1024 },
+  limits: { fileSize: maxUploadSize },
   fileFilter: (_req, file, cb) => {
     if (allowedUploadMimeTypes.has(file.mimetype)) {
       cb(null, true);
@@ -702,39 +704,72 @@ app.post('/api/client/requests', requireAuth, async (req, res, next) => {
   }
 });
 
-app.post('/api/upload', publicWriteLimiter, requireAuth, upload.single('file'), (req, res) => {
-  if (!req.file) {
-    res.status(400).json({ message: 'No se recibió ningún archivo.' });
-    return;
-  }
-
-  if (embeddedImageMimeTypes.has(req.file.mimetype)) {
-    if (req.file.size > embeddedImageMaxSize) {
-      fs.unlink(req.file.path, () => undefined);
-      res.status(413).json({ message: 'La imagen es muy pesada. Sube una miniatura menor a 2 MB.' });
+app.get('/api/upload', async (req, res, next) => {
+  try {
+    const assetId = String(req.query.asset ?? '');
+    if (!assetId) {
+      res.status(400).json({ message: 'Imagen no especificada.' });
       return;
     }
 
-    const base64 = fs.readFileSync(req.file.path).toString('base64');
-    fs.unlink(req.file.path, () => undefined);
+    const asset = await getMediaAsset(assetId);
+    if (!asset) {
+      res.status(404).json({ message: 'Imagen no encontrada.' });
+      return;
+    }
+
+    res.setHeader('Content-Type', asset.mime_type);
+    res.setHeader('Content-Length', String(asset.size));
+    res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+    res.send(asset.data);
+  } catch (error) {
+    next(error);
+  }
+});
+app.post('/api/upload', publicWriteLimiter, requireAuth, upload.single('file'), async (req, res, next) => {
+  try {
+    if (!req.file) {
+      res.status(400).json({ message: 'No se recibio ningun archivo.' });
+      return;
+    }
+
+    if (persistentImageMimeTypes.has(req.file.mimetype) && getDatabaseMode() === 'postgres') {
+      const mediaId = createId('media');
+      const data = fs.readFileSync(req.file.path);
+      await insertMediaAsset({
+        id: mediaId,
+        filename: req.file.originalname,
+        mime_type: req.file.mimetype,
+        size: req.file.size,
+        data,
+        created_at: new Date().toISOString(),
+      });
+      fs.unlink(req.file.path, () => undefined);
+      res.json({
+        url: `/api/upload?asset=${mediaId}`,
+        name: req.file.originalname,
+        type: req.file.mimetype,
+        size: req.file.size,
+        storage: 'database',
+      });
+      return;
+    }
+
+    const url = `/uploads/${req.file.filename}`;
     res.json({
-      url: `data:${req.file.mimetype};base64,${base64}`,
+      url,
       name: req.file.originalname,
       type: req.file.mimetype,
       size: req.file.size,
-      storage: 'embedded',
+      storage: 'filesystem',
     });
-    return;
+  } catch (error) {
+    if (req.file) fs.unlink(req.file.path, () => undefined);
+    next(error);
   }
-
-  const url = `/uploads/${req.file.filename}`;
-  res.json({
-    url,
-    name: req.file.originalname,
-    type: req.file.mimetype,
-    size: req.file.size,
-  });
 });
+
+
 
 if (fs.existsSync(directClientDir) || fs.existsSync(previewDir)) {
   app.use((req, res, next) => {
@@ -750,6 +785,11 @@ if (fs.existsSync(directClientDir) || fs.existsSync(previewDir)) {
 }
 
 app.use((error: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  if (error instanceof multer.MulterError && error.code === 'LIMIT_FILE_SIZE') {
+    res.status(413).json({ message: 'La imagen es muy pesada. El limite permitido es 50 MB.' });
+    return;
+  }
+
   const message = error instanceof Error ? error.message : 'Error interno del servidor.';
   console.error('Kikeled OS API error:', error);
   res.status(500).json({

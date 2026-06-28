@@ -28,6 +28,7 @@ function productSpecs(product: WebProduct) {
 
 export function CatalogPage() {
   const [products, setProducts] = useState<WebProduct[]>(defaultWebProducts);
+  const [selectedProduct, setSelectedProduct] = useState<WebProduct | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -82,16 +83,16 @@ export function CatalogPage() {
                 {images[0] ? <img src={images[0]} alt={product.name} loading="lazy" /> : null}
                 <div className="k-catalog-media-overlay">
                   <span>{product.category}</span>
-                  {mockups.length ? <small>{mockups.length} mockups</small> : null}
+                  <button type="button" onClick={() => setSelectedProduct(product)}>{mockups.length ? `${mockups.length} mockups` : 'Ver producto'}</button>
                 </div>
               </div>
 
               {mockups.length ? (
-                <div className="k-catalog-mockup-strip" aria-label={`Mockups de ${product.name}`}>
+                <button className="k-catalog-mockup-strip" type="button" onClick={() => setSelectedProduct(product)} aria-label={`Ver mockups de ${product.name}`}>
                   {mockups.map((image, index) => (
                     <img key={`${product.id}-mockup-${index}`} src={image} alt={`${product.name} mockup ${index + 1}`} loading="lazy" />
                   ))}
-                </div>
+                </button>
               ) : null}
 
               <div className="k-catalog-product-body">
@@ -138,6 +139,66 @@ export function CatalogPage() {
           );
         })}
       </div>
+
+      {selectedProduct ? <ProductLightbox product={selectedProduct} onClose={() => setSelectedProduct(null)} /> : null}
     </section>
+  );
+}
+
+function ProductLightbox({ product, onClose }: { product: WebProduct; onClose: () => void }) {
+  const images = uniqueImages(product);
+  const specs = productSpecs(product);
+  const [activeImage, setActiveImage] = useState(images[0] ?? product.thumbnailUrl ?? '');
+
+  useEffect(() => {
+    setActiveImage(images[0] ?? product.thumbnailUrl ?? '');
+  }, [product.id]);
+
+  return (
+    <div className="k-product-lightbox" role="dialog" aria-modal="true" aria-label={`Mockups de ${product.name}`}>
+      <button className="k-product-lightbox-backdrop" type="button" onClick={onClose} aria-label="Cerrar" />
+      <div className="k-product-lightbox-panel">
+        <button className="k-product-lightbox-close" type="button" onClick={onClose}>Cerrar</button>
+        <div className="k-product-lightbox-media">
+          {activeImage ? <img src={activeImage} alt={product.name} /> : null}
+          {images.length > 1 ? (
+            <div className="k-product-lightbox-thumbs">
+              {images.map((image, index) => (
+                <button key={`${product.id}-detail-${index}`} className={image === activeImage ? 'is-active' : ''} type="button" onClick={() => setActiveImage(image)}>
+                  <img src={image} alt={`${product.name} vista ${index + 1}`} />
+                </button>
+              ))}
+            </div>
+          ) : null}
+        </div>
+        <div className="k-product-lightbox-content">
+          <p className="label">{product.category}</p>
+          <h2>{product.name}</h2>
+          <p>{product.description || product.shortDescription}</p>
+          {specs.length ? (
+            <div className="k-catalog-spec-grid">
+              {specs.map((spec) => (
+                <div key={spec.label}>
+                  <span>{spec.label}</span>
+                  <strong>{spec.value}</strong>
+                </div>
+              ))}
+            </div>
+          ) : null}
+          {product.details?.length ? (
+            <ul className="k-catalog-detail-list">
+              {product.details.map((detail) => <li key={detail}>{detail}</li>)}
+            </ul>
+          ) : null}
+          <div className="k-catalog-product-footer">
+            <strong>{currency(product.priceFrom)} {product.priceUnit ? <span>/ {product.priceUnit}</span> : null}</strong>
+            <div className="k-catalog-product-actions">
+              <Link to={`/cotizar?producto=${encodeURIComponent(product.name)}`} className="btn-secondary">Subir mi logo</Link>
+              <a href={whatsappProductUrl(product)} className="btn-primary" target="_blank" rel="noreferrer">Cotizar via WhatsApp</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
