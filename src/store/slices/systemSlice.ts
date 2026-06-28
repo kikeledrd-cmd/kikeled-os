@@ -106,6 +106,7 @@ export const createSystemSlice: StateCreator<
         shortDescription: product.shortDescription.trim(),
         description: product.description?.trim(),
         thumbnailUrl: product.thumbnailUrl?.trim(),
+        galleryUrls: product.galleryUrls?.map((item) => item.trim()).filter(Boolean),
         ctaLabel: product.ctaLabel?.trim(),
         materials: product.materials?.map((item) => item.trim()).filter(Boolean),
         sizes: product.sizes?.map((item) => item.trim()).filter(Boolean),

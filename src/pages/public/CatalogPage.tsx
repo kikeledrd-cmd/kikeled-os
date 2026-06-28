@@ -5,6 +5,22 @@ import { apiGetPublicProducts } from '../../lib/api';
 import { currency } from '../../lib/utils';
 import type { WebProduct } from '../../types/entities';
 
+function uniqueImages(product: WebProduct) {
+  return [product.thumbnailUrl, ...(product.galleryUrls ?? [])]
+    .map((url) => url?.trim())
+    .filter((url): url is string => Boolean(url))
+    .filter((url, index, list) => list.indexOf(url) === index)
+    .slice(0, 4);
+}
+
+function productSpecs(product: WebProduct) {
+  return [
+    product.materials?.length ? { label: 'Materiales', value: product.materials.slice(0, 3).join(', ') } : null,
+    product.sizes?.length ? { label: 'Formatos', value: product.sizes.slice(0, 3).join(', ') } : null,
+    product.deliveryTime ? { label: 'Entrega', value: product.deliveryTime } : null,
+  ].filter((item): item is { label: string; value: string } => Boolean(item));
+}
+
 export function CatalogPage() {
   const [products, setProducts] = useState<WebProduct[]>(defaultWebProducts);
 
@@ -28,51 +44,89 @@ export function CatalogPage() {
     return (activeProducts.length ? activeProducts : defaultWebProducts.filter((product) => product.isActive)).sort((a, b) => a.order - b.order);
   }, [products]);
 
+  const featuredProduct = visibleProducts[0];
+
   return (
-    <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
-      <div className="flex flex-col justify-between gap-5 md:flex-row md:items-end">
-        <div className="max-w-3xl">
+    <section className="k-catalog-page mx-auto max-w-7xl px-4 py-16 sm:px-6">
+      <div className="k-catalog-hero">
+        <div>
           <p className="label mb-3">Catalogo Kikeled</p>
-          <h1 className="text-4xl font-semibold text-white md:text-6xl">Productos base para cotizar letreros y piezas visuales.</h1>
-          <p className="mt-5 text-sm leading-7 text-soft">
-            Precios desde referenciales para levantar solicitudes. La cotizacion final depende de medidas, materiales, iluminacion, instalacion y urgencia.
+          <h1>Productos claros, visuales y listos para cotizar.</h1>
+          <p>
+            Explora cada solucion con mockups, materiales, detalles de fabricacion y rangos de precio para decidir rapido que pieza necesita tu negocio.
           </p>
         </div>
-        <Link to="/cotizar" className="btn-primary">
-          Cotizar ahora
-        </Link>
+        {featuredProduct ? (
+          <div className="k-catalog-hero-product">
+            <span>Producto destacado</span>
+            <strong>{featuredProduct.name}</strong>
+            <small>Desde {currency(featuredProduct.priceFrom)}{featuredProduct.priceUnit ? ` / ${featuredProduct.priceUnit}` : ''}</small>
+          </div>
+        ) : null}
       </div>
 
-      <div className="mt-10 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-        {visibleProducts.map((product) => (
-          <article key={product.id} className="k-public-product-card flex min-h-[420px] flex-col rounded-[1.5rem] border border-white/10 bg-white/5 p-6">
-            <div className="k-product-media mb-5 h-40 rounded-[1rem]">
-              {product.thumbnailUrl ? <img src={product.thumbnailUrl} alt={product.name} loading="lazy" /> : null}
-              <span>{product.category}</span>
-            </div>
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="text-xs uppercase tracking-[0.22em] text-cyan-100">{product.category}</p>
-                <h2 className="mt-3 text-2xl font-semibold text-white">{product.name}</h2>
+      <div className="k-catalog-showcase">
+        {visibleProducts.map((product) => {
+          const images = uniqueImages(product);
+          const specs = productSpecs(product);
+          const mockups = images.slice(1);
+
+          return (
+            <article key={product.id} className="k-catalog-product-card">
+              <div className="k-catalog-product-media">
+                {images[0] ? <img src={images[0]} alt={product.name} loading="lazy" /> : null}
+                <div className="k-catalog-media-overlay">
+                  <span>{product.category}</span>
+                  {mockups.length ? <small>{mockups.length} mockups</small> : null}
+                </div>
               </div>
-              <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-soft">Desde</span>
-            </div>
-            <p className="mt-4 text-sm leading-7 text-soft">{product.description || product.shortDescription}</p>
-            <div className="mt-5 grid gap-3 text-sm text-soft">
-              {product.materials?.length ? <p><span className="text-white">Materiales:</span> {product.materials.join(', ')}</p> : null}
-              {product.details?.length ? <p><span className="text-white">Detalles:</span> {product.details.join(', ')}</p> : null}
-              {product.deliveryTime ? <p><span className="text-white">Entrega:</span> {product.deliveryTime}</p> : null}
-            </div>
-            <div className="mt-auto pt-6">
-              <p className="text-2xl font-semibold text-white">
-                {currency(product.priceFrom)} {product.priceUnit ? <span className="text-sm font-normal text-soft">/ {product.priceUnit}</span> : null}
-              </p>
-              <Link to={`/cotizar?producto=${encodeURIComponent(product.name)}`} className="btn-secondary mt-4 w-full">
-                {product.ctaLabel || 'Quiero este producto'}
-              </Link>
-            </div>
-          </article>
-        ))}
+
+              {mockups.length ? (
+                <div className="k-catalog-mockup-strip" aria-label={`Mockups de ${product.name}`}>
+                  {mockups.map((image, index) => (
+                    <img key={`${product.id}-mockup-${index}`} src={image} alt={`${product.name} mockup ${index + 1}`} loading="lazy" />
+                  ))}
+                </div>
+              ) : null}
+
+              <div className="k-catalog-product-body">
+                <div className="k-catalog-product-title">
+                  <div>
+                    <p>{product.category}</p>
+                    <h2>{product.name}</h2>
+                  </div>
+                  <span>Desde</span>
+                </div>
+
+                <p className="k-catalog-product-description">{product.description || product.shortDescription}</p>
+
+                {specs.length ? (
+                  <div className="k-catalog-spec-grid">
+                    {specs.map((spec) => (
+                      <div key={spec.label}>
+                        <span>{spec.label}</span>
+                        <strong>{spec.value}</strong>
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
+
+                {product.details?.length ? (
+                  <ul className="k-catalog-detail-list">
+                    {product.details.slice(0, 4).map((detail) => <li key={detail}>{detail}</li>)}
+                  </ul>
+                ) : null}
+
+                <div className="k-catalog-product-footer">
+                  <strong>{currency(product.priceFrom)} {product.priceUnit ? <span>/ {product.priceUnit}</span> : null}</strong>
+                  <Link to={`/cotizar?producto=${encodeURIComponent(product.name)}`} className="btn-secondary">
+                    {product.ctaLabel || 'Quiero este producto'}
+                  </Link>
+                </div>
+              </div>
+            </article>
+          );
+        })}
       </div>
     </section>
   );

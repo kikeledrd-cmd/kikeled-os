@@ -102,6 +102,7 @@ export function WebContentPage() {
   const [status, setStatus] = useState('');
   const [uploadingSlide, setUploadingSlide] = useState<'media' | 'thumbnail' | null>(null);
   const [uploadingProduct, setUploadingProduct] = useState(false);
+  const [uploadingGallery, setUploadingGallery] = useState(false);
 
   async function saveSlide(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -139,6 +140,7 @@ export function WebContentPage() {
       shortDescription: product.shortDescription.trim(),
       description: product.description?.trim(),
       thumbnailUrl: product.thumbnailUrl?.trim(),
+      galleryUrls: product.galleryUrls?.map((item) => item.trim()).filter(Boolean),
       priceFrom: Number(product.priceFrom) || 0,
       priceUnit: product.priceUnit?.trim(),
       deliveryTime: product.deliveryTime?.trim(),
@@ -191,6 +193,34 @@ export function WebContentPage() {
     } finally {
       setUploadingProduct(false);
     }
+  }
+
+  async function uploadProductGallery(event: ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(event.target.files ?? []);
+    event.target.value = '';
+    if (!files.length) return;
+
+    setUploadingGallery(true);
+    setStatus('');
+    try {
+      const uploaded = await Promise.all(files.map((file) => apiUploadFile(file)));
+      setProduct((current) => ({
+        ...current,
+        galleryUrls: [...(current.galleryUrls ?? []), ...uploaded.map((item) => item.url)].slice(0, 4),
+      }));
+      setStatus('Mockups subidos. Guarda el producto para publicarlos.');
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : 'No se pudieron subir los mockups.');
+    } finally {
+      setUploadingGallery(false);
+    }
+  }
+
+  function removeGalleryUrl(index: number) {
+    setProduct((current) => ({
+      ...current,
+      galleryUrls: (current.galleryUrls ?? []).filter((_, itemIndex) => itemIndex !== index),
+    }));
   }
 
   return (
@@ -292,12 +322,22 @@ export function WebContentPage() {
                   <input type="file" accept="image/*" onChange={(event) => void uploadProductThumbnail(event)} />
                 </label>
               </div>
+              <GalleryPreview urls={product.galleryUrls ?? []} onRemove={removeGalleryUrl} />
+              <div className="k-upload-row">
+                <input className="field" value={listToCsv(product.galleryUrls)} onChange={(event) => setProduct({ ...product, galleryUrls: csvToList(event.target.value) })} placeholder="URLs de mockups separadas por coma" />
+                <label className="btn-secondary">
+                  <ImageUp size={16} />
+                  {uploadingGallery ? 'Subiendo...' : 'Subir mockups'}
+                  <input type="file" accept="image/*" multiple onChange={(event) => void uploadProductGallery(event)} />
+                </label>
+              </div>
               <div className="grid gap-3 md:grid-cols-3">
                 <input className="field" type="number" value={product.priceFrom} onChange={(event) => setProduct({ ...product, priceFrom: Number(event.target.value) })} placeholder="Precio desde" />
                 <input className="field" value={product.priceUnit ?? ''} onChange={(event) => setProduct({ ...product, priceUnit: event.target.value })} placeholder="Unidad" />
                 <input className="field" type="number" value={product.order} onChange={(event) => setProduct({ ...product, order: Number(event.target.value) })} placeholder="Orden" />
               </div>
               <input className="field" value={listToCsv(product.materials)} onChange={(event) => setProduct({ ...product, materials: csvToList(event.target.value) })} placeholder="Materiales separados por coma" />
+              <input className="field" value={listToCsv(product.sizes)} onChange={(event) => setProduct({ ...product, sizes: csvToList(event.target.value) })} placeholder="Formatos o medidas separadas por coma" />
               <input className="field" value={listToCsv(product.details)} onChange={(event) => setProduct({ ...product, details: csvToList(event.target.value) })} placeholder="Detalles separados por coma" />
               <input className="field" value={product.deliveryTime ?? ''} onChange={(event) => setProduct({ ...product, deliveryTime: event.target.value })} placeholder="Tiempo de entrega" />
               <div className="k-toggle-row">
@@ -321,6 +361,22 @@ export function WebContentPage() {
   );
 }
 
+function GalleryPreview({ urls, onRemove }: { urls: string[]; onRemove: (index: number) => void }) {
+  if (!urls.length) return null;
+
+  return (
+    <div className="k-gallery-preview">
+      {urls.map((url, index) => (
+        <div key={`${url}-${index}`}>
+          <img src={url} alt={`Mockup ${index + 1}`} loading="lazy" />
+          <button type="button" onClick={() => onRemove(index)} aria-label={`Quitar mockup ${index + 1}`}>
+            <Trash2 size={14} />
+          </button>
+        </div>
+      ))}
+    </div>
+  );
+}
 function AssetPreview({ url, label, type }: { url?: string; label: string; type: 'image' | 'video' }) {
   if (!url) return null;
 
