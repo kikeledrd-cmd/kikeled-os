@@ -42,6 +42,7 @@ import { AboutPage } from '../pages/public/AboutPage';
 import { AccessPage } from '../pages/public/AccessPage';
 import { ContactPage } from '../pages/public/ContactPage';
 import { HomePage } from '../pages/public/HomePage';
+import { PackageDetailPage } from '../pages/public/PackageDetailPage';
 import { ProjectsPage } from '../pages/public/ProjectsPage';
 import { QuotePage } from '../pages/public/QuotePage';
 import { ServicesPage as PublicServicesPage } from '../pages/public/ServicesPage';
@@ -60,6 +61,7 @@ export default function App() {
         <Route element={<PublicLayout />}>
           <Route path="/" element={<HomePage />} />
           <Route path="/catalogo" element={<CatalogPage />} />
+          <Route path="/paquetes/:packageSlug" element={<PackageDetailPage />} />
           <Route path="/servicios" element={<PublicServicesPage />} />
           <Route path="/proyectos" element={<ProjectsPage />} />
           <Route path="/cotizar" element={<QuotePage />} />

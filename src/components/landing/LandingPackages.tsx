@@ -24,6 +24,7 @@ export function LandingPackages() {
                 <p key={line} className="text-sm text-soft">- {line}</p>
               ))}
             </div>
+            <Link to={`/paquetes/${item.slug}`} className="btn-secondary mt-5 w-full">Ver que incluye</Link>
           </article>
         ))}
       </div>

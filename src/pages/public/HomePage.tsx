@@ -299,8 +299,8 @@ function Packages() {
               ))}
             </ul>
             <div className="k-package-price">{item.price}</div>
-            <Link className="k-btn k-btn-outline" to={`/cotizar?paquete=${encodeURIComponent(item.name)}`}>
-              Cotizar este paquete
+            <Link className="k-btn k-btn-outline" to={`/paquetes/${item.slug}`}>
+              Ver que incluye
             </Link>
           </article>
         ))}
