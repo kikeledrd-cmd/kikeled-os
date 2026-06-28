@@ -2289,10 +2289,15 @@ button.k-catalog-mockup-strip:hover img {
   transition: border-color 0.2s ease, transform 0.2s ease, background 0.2s ease;
 }
 
-.k-product-lightbox-controls button:hover {
+.k-product-lightbox-controls button:hover:not(:disabled) {
   border-color: var(--k-cyan);
   background: rgba(0, 214, 255, 0.12);
   transform: translateY(-1px);
+}
+
+.k-product-lightbox-controls button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
 }
 
 .k-product-lightbox-controls button:last-child {
