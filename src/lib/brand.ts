@@ -16,8 +16,8 @@ export const brand = {
   positioning:
     'Kikeled Studio SRL crea la presencia completa de un negocio: imagen física, experiencia visual y sistema digital.',
   promise: 'Creamos experiencias que conectan y generan resultados.',
-  whatsapp: '+1 (809) 555-0199',
-  whatsappUrl: 'https://wa.me/18095550199',
+  whatsapp: '+1 (829) 664-8023',
+  whatsappUrl: 'https://wa.me/18296648023',
   location: 'República Dominicana',
   email: 'kikeledrd@gmail.com',
   instagram: '@kikeledrd',

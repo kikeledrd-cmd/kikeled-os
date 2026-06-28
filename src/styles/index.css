@@ -2171,3 +2171,18 @@ select.field option:checked {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+
+.k-catalog-product-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.k-catalog-product-actions .btn-primary,
+.k-catalog-product-actions .btn-secondary {
+  min-height: 44px;
+  padding-inline: 16px;
+  white-space: nowrap;
+}

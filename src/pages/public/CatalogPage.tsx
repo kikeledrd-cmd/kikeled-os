@@ -2,9 +2,14 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { defaultWebProducts } from '../../data/webContent';
 import { apiGetPublicProducts } from '../../lib/api';
+import { brand } from '../../lib/brand';
 import { currency } from '../../lib/utils';
 import type { WebProduct } from '../../types/entities';
 
+function whatsappProductUrl(product: WebProduct) {
+  const message = `Hola Kikeled, quiero cotizar este producto: ${product.name}. Tengo mi logo listo para enviarlo.`;
+  return `${brand.whatsappUrl}?text=${encodeURIComponent(message)}`;
+}
 function uniqueImages(product: WebProduct) {
   return [product.thumbnailUrl, ...(product.galleryUrls ?? [])]
     .map((url) => url?.trim())
@@ -119,9 +124,14 @@ export function CatalogPage() {
 
                 <div className="k-catalog-product-footer">
                   <strong>{currency(product.priceFrom)} {product.priceUnit ? <span>/ {product.priceUnit}</span> : null}</strong>
-                  <Link to={`/cotizar?producto=${encodeURIComponent(product.name)}`} className="btn-secondary">
-                    {product.ctaLabel || 'Quiero este producto'}
-                  </Link>
+                  <div className="k-catalog-product-actions">
+                    <Link to={`/cotizar?producto=${encodeURIComponent(product.name)}`} className="btn-secondary">
+                      Subir mi logo
+                    </Link>
+                    <a href={whatsappProductUrl(product)} className="btn-primary" target="_blank" rel="noreferrer">
+                      Cotizar via WhatsApp
+                    </a>
+                  </div>
                 </div>
               </div>
             </article>
