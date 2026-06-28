@@ -42,6 +42,8 @@ const allowedUploadMimeTypes = new Set([
   'video/webm',
   'application/pdf',
 ]);
+const embeddedImageMimeTypes = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
+const embeddedImageMaxSize = 2 * 1024 * 1024;
 
 const upload = multer({
   storage: multer.diskStorage({
@@ -173,7 +175,7 @@ app.use(
   }),
 );
 app.use(cookieParser());
-app.use(express.json({ limit: '5mb' }));
+app.use(express.json({ limit: '15mb' }));
 app.use('/api', apiLimiter);
 app.use('/uploads', express.static(uploadsDir));
 if (fs.existsSync(directClientDir)) {
@@ -705,6 +707,26 @@ app.post('/api/upload', publicWriteLimiter, requireAuth, upload.single('file'), 
     res.status(400).json({ message: 'No se recibió ningún archivo.' });
     return;
   }
+
+  if (embeddedImageMimeTypes.has(req.file.mimetype)) {
+    if (req.file.size > embeddedImageMaxSize) {
+      fs.unlink(req.file.path, () => undefined);
+      res.status(413).json({ message: 'La imagen es muy pesada. Sube una miniatura menor a 2 MB.' });
+      return;
+    }
+
+    const base64 = fs.readFileSync(req.file.path).toString('base64');
+    fs.unlink(req.file.path, () => undefined);
+    res.json({
+      url: `data:${req.file.mimetype};base64,${base64}`,
+      name: req.file.originalname,
+      type: req.file.mimetype,
+      size: req.file.size,
+      storage: 'embedded',
+    });
+    return;
+  }
+
   const url = `/uploads/${req.file.filename}`;
   res.json({
     url,
