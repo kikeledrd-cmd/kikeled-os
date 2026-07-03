@@ -3,7 +3,7 @@ import { createId } from '../../lib/utils';
 import { AppState } from '../types';
 import { registerActivity, syncAdminState } from '../utils';
 
-export const createOperationsSlice: StateCreator<AppState, [], [], Pick<AppState, 'addOrder' | 'updateOrderStatus' | 'assignMaterialsToOrder'>> = (set, get) => ({
+export const createOperationsSlice: StateCreator<AppState, [], [], Pick<AppState, 'addOrder' | 'updateOrderStatus' | 'saveOrderTechnicalData' | 'assignMaterialsToOrder'>> = (set, get) => ({
   addOrder: async (order) => {
     set((state) => ({
       ...registerActivity(
@@ -13,7 +13,7 @@ export const createOperationsSlice: StateCreator<AppState, [], [], Pick<AppState
             {
               ...order,
               id: createId('ord'),
-              number: `OT-${new Date().getFullYear()}-${String(state.orders.length + 20).padStart(3, '0')}`,
+              number: `KR-${new Date().getFullYear()}-${String(state.orders.length + 1).padStart(3, '0')}`,
               createdAt: new Date().toISOString(),
             },
             ...state.orders,
@@ -38,10 +38,11 @@ export const createOperationsSlice: StateCreator<AppState, [], [], Pick<AppState
 
       let nextInventoryMovements = state.inventoryMovements;
       let nextMaterials = state.materials;
+      const now = new Date().toISOString();
 
       if (status === 'entregado' && order.status !== 'entregado') {
         const consumedMaterials = state.orderMaterials.filter((om) => om.orderId === orderId);
-        
+
         for (const om of consumedMaterials) {
           nextInventoryMovements = [
             {
@@ -49,18 +50,16 @@ export const createOperationsSlice: StateCreator<AppState, [], [], Pick<AppState
               materialId: om.materialId,
               type: 'salida',
               quantity: om.quantity,
-              reason: `Consumo automático por orden ${order.number}`,
+              reason: `Consumo automatico por orden ${order.number}`,
               orderId: order.id,
-              createdAt: new Date().toISOString()
+              createdAt: now,
             },
-            ...nextInventoryMovements
+            ...nextInventoryMovements,
           ];
-          
-          nextMaterials = nextMaterials.map(m => 
-            m.id === om.materialId 
-              ? { ...m, stock: m.stock - om.quantity }
-              : m
-          );
+
+          nextMaterials = nextMaterials.map((material) => (
+            material.id === om.materialId ? { ...material, stock: material.stock - om.quantity } : material
+          ));
         }
       }
 
@@ -68,7 +67,24 @@ export const createOperationsSlice: StateCreator<AppState, [], [], Pick<AppState
         ...registerActivity(
           state,
           {
-            orders: state.orders.map((item) => (item.id === orderId ? { ...item, status, progress } : item)),
+            orders: state.orders.map((item) => (
+              item.id === orderId
+                ? {
+                    ...item,
+                    status,
+                    progress,
+                    changeLog: [
+                      {
+                        id: createId('chg'),
+                        createdAt: now,
+                        author: order.owner || 'Kikeled OS',
+                        note: `Estado cambiado de ${order.status} a ${status}.`,
+                      },
+                      ...(item.changeLog ?? []),
+                    ],
+                  }
+                : item
+            )),
             inventoryMovements: nextInventoryMovements,
             materials: nextMaterials,
           },
@@ -76,8 +92,52 @@ export const createOperationsSlice: StateCreator<AppState, [], [], Pick<AppState
             id: createId('act'),
             type: 'orden',
             customerId: order.customerId,
-            description: `La orden ${order.number} cambió a ${status}.`,
-            createdAt: new Date().toISOString(),
+            description: `La orden ${order.number} cambio a ${status}.`,
+            createdAt: now,
+          },
+        ),
+      };
+    });
+    await syncAdminState(get, set);
+  },
+
+  saveOrderTechnicalData: async (orderId, data) => {
+    set((state) => {
+      const order = state.orders.find((item) => item.id === orderId);
+      if (!order) return state;
+      const now = new Date().toISOString();
+      const note = data.changeNote?.trim() || 'Ficha tecnica actualizada.';
+
+      return {
+        ...registerActivity(
+          state,
+          {
+            orders: state.orders.map((item) => (
+              item.id === orderId
+                ? {
+                    ...item,
+                    technicalSheet: { ...data.technicalSheet, updatedAt: now },
+                    productionProcesses: data.productionProcesses,
+                    qualityControl: data.qualityControl,
+                    changeLog: [
+                      {
+                        id: createId('chg'),
+                        createdAt: now,
+                        author: data.technicalSheet.elaboradoPor || order.owner || 'Kikeled OS',
+                        note,
+                      },
+                      ...(item.changeLog ?? []),
+                    ],
+                  }
+                : item
+            )),
+          },
+          {
+            id: createId('act'),
+            type: 'ficha tecnica',
+            customerId: order.customerId,
+            description: `${note} (${order.number}).`,
+            createdAt: now,
           },
         ),
       };
@@ -89,30 +149,47 @@ export const createOperationsSlice: StateCreator<AppState, [], [], Pick<AppState
     set((state) => {
       const order = state.orders.find((item) => item.id === orderId);
       if (!order) return state;
+      const now = new Date().toISOString();
 
-      const newOrderMaterials = materials.map((m) => ({
+      const newOrderMaterials = materials.map((material) => ({
         id: createId('om'),
         orderId,
-        materialId: m.materialId,
-        quantity: m.quantity,
+        materialId: material.materialId,
+        quantity: material.quantity,
       }));
 
-      const filteredOM = state.orderMaterials.filter(om => om.orderId !== orderId);
+      const filteredOrderMaterials = state.orderMaterials.filter((item) => item.orderId !== orderId);
 
       return {
         ...registerActivity(
           state,
           {
-            orderMaterials: [...newOrderMaterials, ...filteredOM],
+            orderMaterials: [...newOrderMaterials, ...filteredOrderMaterials],
+            orders: state.orders.map((item) => (
+              item.id === orderId
+                ? {
+                    ...item,
+                    changeLog: [
+                      {
+                        id: createId('chg'),
+                        createdAt: now,
+                        author: order.owner || 'Kikeled OS',
+                        note: 'Materiales asignados o actualizados.',
+                      },
+                      ...(item.changeLog ?? []),
+                    ],
+                  }
+                : item
+            )),
           },
           {
             id: createId('act'),
             type: 'orden',
             customerId: order.customerId,
             description: `Materiales asignados a la orden ${order.number}.`,
-            createdAt: new Date().toISOString(),
-          }
-        )
+            createdAt: now,
+          },
+        ),
       };
     });
     await syncAdminState(get, set);

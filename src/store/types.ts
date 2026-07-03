@@ -59,6 +59,7 @@ export interface AppState extends AppData {
   
   addOrder: (order: Omit<Order, 'id' | 'number' | 'createdAt'>) => Promise<void>;
   updateOrderStatus: (orderId: string, status: Order['status'], progress: number) => Promise<void>;
+  saveOrderTechnicalData: (orderId: string, data: { technicalSheet: NonNullable<Order['technicalSheet']>; productionProcesses: NonNullable<Order['productionProcesses']>; qualityControl: NonNullable<Order['qualityControl']>; changeNote?: string }) => Promise<void>;
   assignMaterialsToOrder: (orderId: string, materials: Array<{ materialId: string; quantity: number }>) => Promise<void>;
   
   addManualInvoice: (invoice: Omit<Invoice, 'id' | 'number' | 'balance' | 'status'>) => Promise<void>;

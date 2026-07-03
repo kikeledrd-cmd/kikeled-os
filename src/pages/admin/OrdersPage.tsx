@@ -6,7 +6,7 @@ import { ShellTable } from '../../components/shared/ShellTable';
 import { StatusBadge } from '../../components/shared/StatusBadge';
 import { useAppStore } from '../../store/useAppStore';
 
-const orderStatuses = ['pendiente', 'diseño', 'corte', 'impresión', 'ensamblaje', 'listo para instalar', 'instalación', 'entregado', 'cerrado'] as const;
+const orderStatuses = ['pendiente', 'diseÃ±o', 'corte', 'impresiÃ³n', 'ensamblaje', 'listo para instalar', 'instalaciÃ³n', 'entregado', 'cerrado'] as const;
 
 function MaterialAssignModal({ orderId, onClose }: { orderId: string, onClose: () => void }) {
   const { materials, orderMaterials, assignMaterialsToOrder } = useAppStore(state => state);
@@ -29,7 +29,7 @@ function MaterialAssignModal({ orderId, onClose }: { orderId: string, onClose: (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
       <div className="bg-ink border border-white/10 rounded-3xl p-6 w-full max-w-lg max-h-[80vh] flex flex-col">
         <h2 className="text-xl font-bold text-white mb-4">Asignar Materiales Reales</h2>
-        <p className="text-sm text-soft mb-6">Indica qué materiales se están usando en esta orden. Se descontarán del inventario automáticamente cuando la orden cambie a "entregado".</p>
+        <p className="text-sm text-soft mb-6">Indica quÃ© materiales se estÃ¡n usando en esta orden. Se descontarÃ¡n del inventario automÃ¡ticamente cuando la orden cambie a "entregado".</p>
         
         <div className="space-y-4 mb-6 overflow-y-auto flex-grow pr-2">
           {materials.map(mat => (
@@ -53,7 +53,7 @@ function MaterialAssignModal({ orderId, onClose }: { orderId: string, onClose: (
         
         <div className="flex gap-3 justify-end mt-auto pt-4 border-t border-white/10">
           <button className="btn-ghost" onClick={onClose}>Cancelar</button>
-          <button className="btn-primary" onClick={handleSave}>Guardar Asignación</button>
+          <button className="btn-primary" onClick={handleSave}>Guardar AsignaciÃ³n</button>
         </div>
       </div>
     </div>
@@ -66,8 +66,8 @@ export function OrdersPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader eyebrow="Taller y campo" title="Órdenes de Trabajo" description="Sigue producción real con estado, avance, notas técnicas y materiales asociados." />
-      <SectionCard title="Módulo operativo" description="Actualiza estado y progreso sin perder trazabilidad.">
+      <PageHeader eyebrow="Taller y campo" title="Ã“rdenes de Trabajo" description="Sigue producciÃ³n real con estado, avance, notas tÃ©cnicas y materiales asociados." />
+      <SectionCard title="MÃ³dulo operativo" description="Actualiza estado y progreso sin perder trazabilidad.">
         <ShellTable columns={['Orden', 'Cliente', 'Servicio', 'Estado', 'Avance', 'Materiales', 'Checklist']}>
           {orders.map((order) => (
             <tr key={order.id}>
@@ -88,7 +88,8 @@ export function OrdersPage() {
               <td className="px-4 py-3">
                 <div className="flex flex-col gap-2">
                   <Link className="btn-ghost text-center" to={`/admin/ordenes/${order.id}`}>Ver detalle</Link>
-                  <Link className="btn-ghost text-center" to={`/admin/ordenes/${order.id}/imprimir`}>Imprimir</Link>
+                  <Link className="btn-ghost text-center" to={`/admin/ordenes/${order.id}/ficha-tecnica`}>Ficha tecnica</Link>
+                  <Link className="btn-ghost text-center" to={`/admin/ordenes/${order.id}/imprimir`}>Imprimir orden</Link>
                   <select className="field py-2" value={order.status} onChange={(event) => updateOrderStatus(order.id, event.target.value as typeof order.status, order.progress)}>
                     {orderStatuses.map((status) => <option key={status} value={status}>{status}</option>)}
                   </select>

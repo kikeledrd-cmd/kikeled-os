@@ -18,6 +18,7 @@ import { LeadsPage } from '../pages/admin/LeadsPage';
 import { LeadDetailPage } from '../pages/admin/LeadDetailPage';
 import { OrderDetailPage } from '../pages/admin/OrderDetailPage';
 import { OrderPrintPage } from '../pages/admin/OrderPrintPage';
+import { TechnicalSheetPrintPage } from '../pages/admin/TechnicalSheetPrintPage';
 import { OrdersPage } from '../pages/admin/OrdersPage';
 import { OsDashboardPage } from '../pages/admin/OsDashboardPage';
 import { PremiumPassPage } from '../pages/admin/PremiumPassPage';
@@ -74,6 +75,7 @@ export default function App() {
       <Route path="/admin/cotizaciones/:quoteId/imprimir" element={<ProtectedRoute allow={['admin', 'sales']}><QuotePrintPage /></ProtectedRoute>} />
       <Route path="/admin/facturacion/:invoiceId/imprimir" element={<ProtectedRoute allow={['admin', 'sales']}><InvoicePrintPage /></ProtectedRoute>} />
       <Route path="/admin/ordenes/:orderId/imprimir" element={<ProtectedRoute allow={['admin']}><OrderPrintPage /></ProtectedRoute>} />
+      <Route path="/admin/ordenes/:orderId/ficha-tecnica" element={<ProtectedRoute allow={['admin']}><TechnicalSheetPrintPage /></ProtectedRoute>} />
 
       <Route path="/admin" element={<ProtectedRoute allow={['admin', 'sales']}><AdminLayout><AdminDashboardPage /></AdminLayout></ProtectedRoute>} />
       <Route path="/admin/leads" element={<ProtectedRoute allow={['admin', 'sales']}><AdminLayout><LeadsPage /></AdminLayout></ProtectedRoute>} />

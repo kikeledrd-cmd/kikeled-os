@@ -1,13 +1,14 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import type { ReactNode } from 'react';
-import { ArrowLeft, FileText, PackageCheck, Printer } from 'lucide-react';
+import { ArrowLeft, FileText, Lock, MessageCircle, PackageCheck, Printer, Save } from 'lucide-react';
 import { PageHeader } from '../../components/shared/PageHeader';
 import { SectionCard } from '../../components/shared/SectionCard';
 import { ShellTable } from '../../components/shared/ShellTable';
 import { StatusBadge } from '../../components/shared/StatusBadge';
-import { shortDate } from '../../lib/utils';
-import { Order } from '../../types/entities';
+import { currency, shortDate } from '../../lib/utils';
+import { buildTechnicalSheet, getOrderProcesses, getOrderQualityControl } from '../../lib/technicalSheet';
+import type { Order, ProductionProcess, ProductionProcessStatus, QualityControl, TechnicalSheet } from '../../types/entities';
 import { useAppStore } from '../../store/useAppStore';
 
 const orderStatuses: Order['status'][] = [
@@ -22,9 +23,23 @@ const orderStatuses: Order['status'][] = [
   'cerrado',
 ];
 
+const processStatuses: ProductionProcessStatus[] = ['pendiente', 'en proceso', 'completado'];
+
+const qualityLabels: Array<{ key: keyof Omit<QualityControl, 'revisadoPor' | 'fechaRevision' | 'observaciones'>; label: string }> = [
+  { key: 'medidasCorrectas', label: 'Medidas correctas' },
+  { key: 'corteLimpio', label: 'Corte limpio' },
+  { key: 'iluminacionFunciona', label: 'Iluminacion funciona' },
+  { key: 'cableadoSeguro', label: 'Cableado seguro' },
+  { key: 'fijacionesCorrectas', label: 'Fijaciones correctas' },
+  { key: 'acabadoFinal', label: 'Acabado final' },
+  { key: 'limpiezaGeneral', label: 'Limpieza general' },
+];
+
 export function OrderDetailPage() {
   const { orderId = '' } = useParams();
   const [materialsOpen, setMaterialsOpen] = useState(false);
+  const [statusMessage, setStatusMessage] = useState('');
+  const [changeNote, setChangeNote] = useState('');
   const {
     orders,
     customers,
@@ -34,10 +49,29 @@ export function OrderDetailPage() {
     orderMaterials,
     activities,
     updateOrderStatus,
+    saveOrderTechnicalData,
     assignMaterialsToOrder,
   } = useAppStore((state) => state);
 
   const order = orders.find((item) => item.id === orderId);
+  const customer = customers.find((item) => item.id === order?.customerId);
+  const quote = order?.quoteId ? quotes.find((item) => item.id === order.quoteId) : null;
+  const invoice = invoices.find((item) => item.orderId === order?.id || item.quoteId === order?.quoteId);
+
+  const initialSheet = useMemo(() => (order ? buildTechnicalSheet(order, customer, quote, invoice) : null), [order, customer, quote, invoice]);
+  const initialProcesses = useMemo(() => (order ? getOrderProcesses(order) : []), [order]);
+  const initialQuality = useMemo(() => (order ? getOrderQualityControl(order) : null), [order]);
+  const [technicalSheet, setTechnicalSheet] = useState<TechnicalSheet | null>(initialSheet);
+  const [productionProcesses, setProductionProcesses] = useState<ProductionProcess[]>(initialProcesses);
+  const [qualityControl, setQualityControl] = useState<QualityControl | null>(initialQuality);
+
+  useEffect(() => {
+    setTechnicalSheet(initialSheet);
+    setProductionProcesses(initialProcesses);
+    setQualityControl(initialQuality);
+    setStatusMessage('');
+    setChangeNote('');
+  }, [initialSheet, initialProcesses, initialQuality]);
 
   if (!order) {
     return (
@@ -50,18 +84,41 @@ export function OrderDetailPage() {
     );
   }
 
-  const customer = customers.find((item) => item.id === order.customerId);
-  const quote = order.quoteId ? quotes.find((item) => item.id === order.quoteId) : null;
-  const invoice = invoices.find((item) => item.orderId === order.id || item.quoteId === order.quoteId);
+  if (!technicalSheet || !qualityControl) {
+    return null;
+  }
+
   const assignedMaterials = orderMaterials.filter((item) => item.orderId === order.id);
   const orderActivities = activities.filter((activity) => activity.customerId === order.customerId);
+  const technicalSheetUrl = `/admin/ordenes/${order.id}/ficha-tecnica`;
+  const whatsappUrl = customer?.whatsapp ? `https://wa.me/${customer.whatsapp.replace(/\D/g, '')}?text=${encodeURIComponent(`Ficha tecnica de ${order.number} lista para revision.`)}` : '';
+  const locked = technicalSheet.locked;
+
+  const updateSheet = <K extends keyof TechnicalSheet>(key: K, value: TechnicalSheet[K]) => {
+    setTechnicalSheet((current) => (current ? { ...current, [key]: value } : current));
+  };
+
+  const updateProcess = (processId: string, patch: Partial<ProductionProcess>) => {
+    setProductionProcesses((current) => current.map((process) => (process.id === processId ? { ...process, ...patch } : process)));
+  };
+
+  const saveTechnicalSheet = async () => {
+    await saveOrderTechnicalData(order.id, {
+      technicalSheet,
+      productionProcesses,
+      qualityControl,
+      changeNote,
+    });
+    setStatusMessage('Ficha tecnica guardada. Ya puedes imprimirla o descargarla.');
+    setChangeNote('');
+  };
 
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Detalle de orden"
-        title={order.number}
-        description={customer ? `Produccion para ${customer.business}.` : order.service}
+        eyebrow="Orden de produccion"
+        title={`${order.number} - ${customer?.business ?? order.service}`}
+        description={customer ? `${order.service}. Produccion para ${customer.business}.` : order.service}
         action={
           <Link to="/admin/ordenes" className="btn-secondary">
             <ArrowLeft size={16} className="mr-2" />
@@ -78,7 +135,7 @@ export function OrderDetailPage() {
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[1.15fr,0.85fr]">
-        <SectionCard title="Produccion" description="Items, fechas, notas tecnicas y archivos de trabajo.">
+        <SectionCard title="Resumen de produccion" description="Cliente, items, fechas, notas y archivos de trabajo.">
           <ShellTable columns={['Item', 'Servicio', 'Cantidad', 'Medidas']}>
             {order.items.map((item) => (
               <tr key={item.id}>
@@ -98,24 +155,28 @@ export function OrderDetailPage() {
           </div>
 
           <div className="mt-5 grid gap-4 md:grid-cols-2">
-            <Note title="Notas tecnicas" value={order.technicalNotes} />
+            <Note title="Notas tecnicas" value={order.technicalNotes || 'Sin notas tecnicas.'} />
             <Note title="Notas instalacion" value={order.installationNotes || 'Sin notas de instalacion.'} />
-          </div>
-
-          <div className="mt-5 rounded-2xl border border-white/10 bg-white/5 p-5">
-            <p className="text-sm font-semibold text-white">Archivos de referencia</p>
-            <div className="mt-3 flex flex-wrap gap-2">
-              {order.referenceFiles.map((file) => (
-                <span key={file} className="rounded-full border border-white/10 bg-ink/60 px-3 py-1 text-xs text-soft">{file}</span>
-              ))}
-              {order.referenceFiles.length === 0 && <p className="text-sm text-soft">Sin archivos registrados.</p>}
-            </div>
           </div>
         </SectionCard>
 
         <div className="space-y-6">
-          <SectionCard title="Acciones" description="Control de produccion, avance e inventario.">
+          <SectionCard title="Acciones" description="Control operativo y ficha tecnica del taller.">
             <div className="space-y-3">
+              <button className="btn-primary w-full" onClick={() => void saveTechnicalSheet()}>
+                <Save size={16} className="mr-2" />
+                Guardar ficha tecnica
+              </button>
+              <Link className="btn-secondary w-full" to={technicalSheetUrl}>
+                <Printer size={16} className="mr-2" />
+                Generar / imprimir ficha
+              </Link>
+              {whatsappUrl ? (
+                <a className="btn-secondary w-full" href={whatsappUrl} target="_blank" rel="noreferrer">
+                  <MessageCircle size={16} className="mr-2" />
+                  Enviar por WhatsApp
+                </a>
+              ) : null}
               <select
                 className="field w-full"
                 value={order.status}
@@ -134,25 +195,17 @@ export function OrderDetailPage() {
                   onChange={(event) => updateOrderStatus(order.id, order.status, Number(event.target.value))}
                 />
               </div>
-              <button className="btn-primary w-full" onClick={() => setMaterialsOpen(true)}>
+              <button className="btn-secondary w-full" onClick={() => setMaterialsOpen(true)}>
                 <PackageCheck size={16} className="mr-2" />
                 Asignar materiales
               </button>
-              <Link className="btn-secondary w-full" to={`/admin/ordenes/${order.id}/imprimir`}>
-                <Printer size={16} className="mr-2" />
-                Imprimir orden
-              </Link>
               {quote && (
                 <Link className="btn-secondary w-full" to={`/admin/cotizaciones/${quote.id}`}>
                   <FileText size={16} className="mr-2" />
                   Ver cotizacion
                 </Link>
               )}
-              {invoice && (
-                <Link className="btn-secondary w-full" to={`/admin/facturacion/${invoice.id}`}>
-                  Ver factura
-                </Link>
-              )}
+              {statusMessage && <p className="rounded-2xl border border-emerald-400/30 bg-emerald-400/10 p-3 text-sm text-emerald-100">{statusMessage}</p>}
             </div>
           </SectionCard>
 
@@ -161,23 +214,100 @@ export function OrderDetailPage() {
               <Info label="Negocio" value={customer?.business ?? 'No encontrado'} />
               <Info label="Contacto" value={customer?.name ?? 'Por definir'} />
               <Info label="WhatsApp" value={customer?.whatsapp ?? 'Por definir'} />
+              <Info label="Direccion" value={customer?.address ?? 'Por definir'} />
               {customer && <Link className="btn-secondary w-full" to={`/admin/clientes/${customer.id}`}>Ver cliente</Link>}
-            </div>
-          </SectionCard>
-
-          <SectionCard title="Actividad" description="Eventos relacionados al cliente.">
-            <div className="space-y-3">
-              {orderActivities.slice(0, 5).map((activity) => (
-                <div key={activity.id} className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                  <p className="font-medium text-white">{activity.description}</p>
-                  <p className="mt-1 text-sm text-soft">{shortDate(activity.createdAt)}</p>
-                </div>
-              ))}
-              {orderActivities.length === 0 && <p className="text-sm text-soft">Sin actividad relacionada todavia.</p>}
             </div>
           </SectionCard>
         </div>
       </div>
+
+      <SectionCard title="Ficha tecnica" description="Mapa de fabricacion. Sin esta ficha completa, no se fabrica.">
+        <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-cyan-300/20 bg-cyan-300/10 p-4">
+          <div>
+            <p className="font-semibold text-white">Protocolo anti-caos</p>
+            <p className="text-sm text-soft">Medida confirmada, diseno aprobado, material definido, anticipo recibido y fecha acordada.</p>
+          </div>
+          <label className="inline-flex items-center gap-2 text-sm text-white">
+            <input type="checkbox" checked={technicalSheet.locked} onChange={(event) => updateSheet('locked', event.target.checked)} />
+            <Lock size={15} /> Bloquear ficha
+          </label>
+        </div>
+
+        <div className="grid gap-3 md:grid-cols-3">
+          <Field label="Tipo de letrero" value={technicalSheet.tipoLetrero} onChange={(value) => updateSheet('tipoLetrero', value)} disabled={locked} />
+          <Field label="Material principal" value={technicalSheet.materialPrincipal} onChange={(value) => updateSheet('materialPrincipal', value)} disabled={locked} />
+          <Field label="Espesor" value={technicalSheet.espesorMaterial} onChange={(value) => updateSheet('espesorMaterial', value)} disabled={locked} />
+          <Field label="Ancho" value={technicalSheet.ancho} onChange={(value) => updateSheet('ancho', value)} disabled={locked} />
+          <Field label="Alto" value={technicalSheet.alto} onChange={(value) => updateSheet('alto', value)} disabled={locked} />
+          <Field label="Profundidad" value={technicalSheet.profundidad} onChange={(value) => updateSheet('profundidad', value)} disabled={locked} />
+          <Field label="Distancia de vision" value={technicalSheet.distanciaVision} onChange={(value) => updateSheet('distanciaVision', value)} disabled={locked} />
+          <Field label="Iluminacion" value={technicalSheet.iluminacion} onChange={(value) => updateSheet('iluminacion', value)} disabled={locked} />
+          <Field label="Color de luz" value={technicalSheet.colorLuz} onChange={(value) => updateSheet('colorLuz', value)} disabled={locked} />
+          <Field label="Voltaje" value={technicalSheet.voltaje} onChange={(value) => updateSheet('voltaje', value)} disabled={locked} />
+          <Field label="Fuente de poder" value={technicalSheet.fuentePoder} onChange={(value) => updateSheet('fuentePoder', value)} disabled={locked} />
+          <Field label="Cableado" value={technicalSheet.cableado} onChange={(value) => updateSheet('cableado', value)} disabled={locked} />
+          <Field label="Formato archivo" value={technicalSheet.formatoArchivo} onChange={(value) => updateSheet('formatoArchivo', value)} disabled={locked} />
+          <Field label="Instalador" value={technicalSheet.instalador} onChange={(value) => updateSheet('instalador', value)} disabled={locked} />
+          <Field label="Fecha instalacion" type="date" value={technicalSheet.fechaInstalacion} onChange={(value) => updateSheet('fechaInstalacion', value)} disabled={locked} />
+        </div>
+
+        <div className="mt-4 grid gap-4 md:grid-cols-3">
+          <CheckCard label="Archivo recibido" checked={technicalSheet.archivoRecibido} onChange={(value) => updateSheet('archivoRecibido', value)} disabled={locked} />
+          <CheckCard label="Instalacion requerida" checked={technicalSheet.instalacionRequerida} onChange={(value) => updateSheet('instalacionRequerida', value)} disabled={locked} />
+          <Info label="Monto / saldo" value={`${currency(technicalSheet.montoTotal)} / ${currency(technicalSheet.saldo)}`} />
+        </div>
+
+        <div className="mt-4 grid gap-4 md:grid-cols-2">
+          <TextArea label="Observaciones de diseno" value={technicalSheet.observacionesDiseno} onChange={(value) => updateSheet('observacionesDiseno', value)} disabled={locked} />
+          <TextArea label="Observaciones tecnicas" value={technicalSheet.observacionesTecnicas} onChange={(value) => updateSheet('observacionesTecnicas', value)} disabled={locked} />
+          <TextArea label="Direccion / notas de instalacion" value={technicalSheet.direccionInstalacion} onChange={(value) => updateSheet('direccionInstalacion', value)} disabled={locked} />
+          <TextArea label="Notas generales" value={technicalSheet.notasGenerales} onChange={(value) => updateSheet('notasGenerales', value)} disabled={locked} />
+        </div>
+      </SectionCard>
+
+      <SectionCard title="Proceso de produccion" description="Responsables, fechas y estado por etapa.">
+        <div className="space-y-3">
+          {productionProcesses.map((process) => (
+            <div key={process.id} className="grid gap-3 rounded-2xl border border-white/10 bg-white/5 p-4 lg:grid-cols-[1.2fr,1fr,0.8fr,0.8fr,0.9fr]">
+              <Info label="Proceso" value={process.process} />
+              <Field label="Responsable" value={process.responsible} onChange={(value) => updateProcess(process.id, { responsible: value })} disabled={locked} />
+              <Field label="Inicio" type="date" value={process.startDate} onChange={(value) => updateProcess(process.id, { startDate: value })} disabled={locked} />
+              <Field label="Fin" type="date" value={process.endDate} onChange={(value) => updateProcess(process.id, { endDate: value })} disabled={locked} />
+              <label className="block">
+                <span className="label mb-2 block">Estado</span>
+                <select className="field w-full" value={process.status} disabled={locked} onChange={(event) => updateProcess(process.id, { status: event.target.value as ProductionProcessStatus })}>
+                  {processStatuses.map((status) => <option key={status} value={status}>{status}</option>)}
+                </select>
+              </label>
+              <div className="lg:col-span-5">
+                <TextArea label="Observaciones" value={process.observations} onChange={(value) => updateProcess(process.id, { observations: value })} disabled={locked} rows={2} />
+              </div>
+            </div>
+          ))}
+        </div>
+      </SectionCard>
+
+      <SectionCard title="Control de calidad" description="Checklist obligatorio antes de entregar.">
+        <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
+          {qualityLabels.map((item) => (
+            <CheckCard
+              key={item.key}
+              label={item.label}
+              checked={Boolean(qualityControl[item.key])}
+              disabled={locked}
+              onChange={(value) => setQualityControl({ ...qualityControl, [item.key]: value })}
+            />
+          ))}
+        </div>
+        <div className="mt-4 grid gap-3 md:grid-cols-3">
+          <Field label="Revisado por" value={qualityControl.revisadoPor} onChange={(value) => setQualityControl({ ...qualityControl, revisadoPor: value })} disabled={locked} />
+          <Field label="Fecha revision" type="date" value={qualityControl.fechaRevision} onChange={(value) => setQualityControl({ ...qualityControl, fechaRevision: value })} disabled={locked} />
+          <Field label="Estado pago" value={technicalSheet.estadoPago} onChange={(value) => updateSheet('estadoPago', value)} disabled={locked} />
+        </div>
+        <div className="mt-4">
+          <TextArea label="Observaciones de calidad" value={qualityControl.observaciones} onChange={(value) => setQualityControl({ ...qualityControl, observaciones: value })} disabled={locked} />
+        </div>
+      </SectionCard>
 
       <SectionCard title="Materiales asignados" description="Material real reservado para esta orden.">
         <ShellTable columns={['Material', 'Codigo', 'Cantidad', 'Stock actual']}>
@@ -195,9 +325,41 @@ export function OrderDetailPage() {
         </ShellTable>
       </SectionCard>
 
+      <SectionCard title="Historial de cambios" description="Registro interno de decisiones y modificaciones importantes.">
+        <div className="grid gap-4 lg:grid-cols-[0.9fr,1.1fr]">
+          <div className="space-y-3">
+            <TextArea label="Nota del cambio" value={changeNote} onChange={setChangeNote} rows={3} />
+            <button className="btn-primary" onClick={() => void saveTechnicalSheet()}>
+              <Save size={16} className="mr-2" />
+              Guardar cambio
+            </button>
+          </div>
+          <div className="space-y-3">
+            {(order.changeLog ?? []).slice(0, 8).map((change) => (
+              <div key={change.id} className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                <p className="font-medium text-white">{change.note}</p>
+                <p className="mt-1 text-sm text-soft">{shortDate(change.createdAt)} - {change.author}</p>
+              </div>
+            ))}
+            {(order.changeLog ?? []).length === 0 && <p className="text-sm text-soft">Sin cambios registrados todavia.</p>}
+          </div>
+        </div>
+      </SectionCard>
+
+      <SectionCard title="Actividad" description="Eventos relacionados al cliente.">
+        <div className="space-y-3">
+          {orderActivities.slice(0, 5).map((activity) => (
+            <div key={activity.id} className="rounded-2xl border border-white/10 bg-white/5 p-4">
+              <p className="font-medium text-white">{activity.description}</p>
+              <p className="mt-1 text-sm text-soft">{shortDate(activity.createdAt)}</p>
+            </div>
+          ))}
+          {orderActivities.length === 0 && <p className="text-sm text-soft">Sin actividad relacionada todavia.</p>}
+        </div>
+      </SectionCard>
+
       {materialsOpen && (
         <MaterialAssignModal
-          orderId={order.id}
           assignedMaterials={assignedMaterials}
           onClose={() => setMaterialsOpen(false)}
           onSave={(items) => {
@@ -215,7 +377,6 @@ function MaterialAssignModal({
   onClose,
   onSave,
 }: {
-  orderId: string;
   assignedMaterials: Array<{ materialId: string; quantity: number }>;
   onClose: () => void;
   onSave: (items: Array<{ materialId: string; quantity: number }>) => void;
@@ -280,8 +441,35 @@ function Info({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
       <p className="label mb-2">{label}</p>
-      <p className="text-sm text-white">{value}</p>
+      <p className="whitespace-pre-wrap text-sm text-white">{value}</p>
     </div>
+  );
+}
+
+function Field({ label, value, onChange, type = 'text', disabled }: { label: string; value: string; onChange: (value: string) => void; type?: string; disabled?: boolean }) {
+  return (
+    <label className="block">
+      <span className="label mb-2 block">{label}</span>
+      <input className="field w-full" type={type} value={value} disabled={disabled} onChange={(event) => onChange(event.target.value)} />
+    </label>
+  );
+}
+
+function TextArea({ label, value, onChange, disabled, rows = 4 }: { label: string; value: string; onChange: (value: string) => void; disabled?: boolean; rows?: number }) {
+  return (
+    <label className="block">
+      <span className="label mb-2 block">{label}</span>
+      <textarea className="field w-full" rows={rows} value={value} disabled={disabled} onChange={(event) => onChange(event.target.value)} />
+    </label>
+  );
+}
+
+function CheckCard({ label, checked, onChange, disabled }: { label: string; checked: boolean; onChange: (value: boolean) => void; disabled?: boolean }) {
+  return (
+    <label className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-white">
+      <input type="checkbox" checked={checked} disabled={disabled} onChange={(event) => onChange(event.target.checked)} />
+      {label}
+    </label>
   );
 }
 

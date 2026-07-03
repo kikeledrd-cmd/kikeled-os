@@ -30,11 +30,14 @@ export type QuoteStatus =
 export type OrderStatus =
   | 'pendiente'
   | 'diseño'
+  | 'diseÃ±o'
   | 'corte'
   | 'impresión'
+  | 'impresiÃ³n'
   | 'ensamblaje'
   | 'listo para instalar'
   | 'instalación'
+  | 'instalaciÃ³n'
   | 'entregado'
   | 'cerrado';
 
@@ -169,6 +172,71 @@ export interface OrderMaterial {
   quantity: number;
 }
 
+export type ProductionProcessStatus = 'pendiente' | 'en proceso' | 'completado';
+
+export interface TechnicalSheet {
+  tipoLetrero: string;
+  materialPrincipal: string;
+  ancho: string;
+  alto: string;
+  profundidad: string;
+  distanciaVision: string;
+  espesorMaterial: string;
+  iluminacion: string;
+  colorLuz: string;
+  voltaje: string;
+  fuentePoder: string;
+  cableado: string;
+  archivoRecibido: boolean;
+  formatoArchivo: string;
+  observacionesDiseno: string;
+  observacionesTecnicas: string;
+  instalacionRequerida: boolean;
+  direccionInstalacion: string;
+  fechaInstalacion: string;
+  instalador: string;
+  estadoPago: string;
+  formaPago: string;
+  montoTotal: number;
+  anticipo: number;
+  saldo: number;
+  notasGenerales: string;
+  elaboradoPor: string;
+  aprobadoPor: string;
+  locked: boolean;
+  updatedAt: string;
+}
+
+export interface ProductionProcess {
+  id: string;
+  process: string;
+  responsible: string;
+  startDate: string;
+  endDate: string;
+  status: ProductionProcessStatus;
+  observations: string;
+}
+
+export interface QualityControl {
+  medidasCorrectas: boolean;
+  corteLimpio: boolean;
+  iluminacionFunciona: boolean;
+  cableadoSeguro: boolean;
+  fijacionesCorrectas: boolean;
+  acabadoFinal: boolean;
+  limpiezaGeneral: boolean;
+  revisadoPor: string;
+  fechaRevision: string;
+  observaciones: string;
+}
+
+export interface OrderChangeLog {
+  id: string;
+  createdAt: string;
+  author: string;
+  note: string;
+}
+
 export interface Order {
   id: string;
   number: string;
@@ -186,6 +254,10 @@ export interface Order {
   technicalNotes: string;
   installationNotes: string;
   referenceFiles: string[];
+  technicalSheet?: TechnicalSheet;
+  productionProcesses?: ProductionProcess[];
+  qualityControl?: QualityControl;
+  changeLog?: OrderChangeLog[];
   createdAt: string;
 }
 
