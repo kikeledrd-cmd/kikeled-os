@@ -1,64 +1,57 @@
 # Kikeled OS
 
-Kikeled OS es la app funcional de Kikeled Letreros Publicitarios. Convive con la estructura documental `../Kikeled_OS/RGB_Control`, que sigue funcionando como cerebro operativo para branding, contenido, prompts, QA, Remotion, agentes IA y documentacion.
+Centro de comando interno de Kikeled Studio SRL (letreros, decoración gamer y personalizados en RD). Combina tres frentes en una sola app:
 
-## Modulos actuales
+- **Web pública** (`/`, `/catalogo`, `/cotizar`): landing comercial que crea leads reales.
+- **Panel admin** (`/admin`): leads, CRM, cotizaciones, órdenes con ficha técnica, inventario, facturación, Premium Pass, contenido web, usuarios y reportes.
+- **Portal cliente** (`/portal`): cotizaciones, órdenes, facturas y solicitudes del cliente.
 
-- `/`: homepage publico oficial de Kikeled Studio SRL con estetica dark RGB, servicios, metodo, catalogo, paquetes, formulario y CTA.
-- `/catalogo`: catalogo inicial de productos y precios desde.
-- `/cotizar`: formulario publico que crea leads reales en el sistema.
-- `/os/dashboard`: CRM basico interno para revisar leads, cambiar estado y ver detalle.
-- `/admin`: panel operativo avanzado existente.
-- `/portal`: portal cliente existente.
+Documentos clave: `ANALISIS_Y_MASTER_PLAN.md` (diagnóstico y plan por fases), `TAREAS_CLAUDE_CODE.md` (backlog ejecutable), `CLAUDE.md` (guía para agentes).
 
-## Flujo operativo
+## Stack
 
-1. El cliente entra a la landing y revisa servicios o catalogo.
-2. El cliente envia el formulario de `/cotizar` con datos, medidas y logo/referencia.
-3. El lead queda guardado en SQLite dentro del estado de la app.
-4. El equipo entra a `/os/dashboard` para contactar, cambiar estado y preparar cotizacion.
-5. RGB Control mantiene la documentacion, prompts, assets y QA de la operacion.
-
-## Datos base
-
-- `src/lib/brand.ts`: identidad comercial.
-- `src/lib/services.ts`: servicios y proceso.
-- `src/lib/packages.ts`: paquetes comerciales.
-- `src/lib/products.ts`: catalogo de productos.
-- `src/components/brand/Logo.tsx`: logo reusable con fallback textual.
-- `src/components/landing/QuoteForm.tsx`: formulario publico reusable conectado a `/api/public/leads`.
-
-## Probar formulario publico
-
-1. Abre `http://localhost:4002/` o `http://localhost:4002/cotizar`.
-2. Completa los campos obligatorios y opcionalmente adjunta logo, foto o PDF.
-3. Envia el formulario.
-4. Debe mostrarse: `Solicitud creada. Ya esta guardada como lead en Kikeled OS.`
-5. Entra a `/os/dashboard` o `/admin/leads` para ver el lead nuevo.
+React 18 + TypeScript + Vite · Zustand (slices) · Express 5 · Zod · JWT (cookie) + bcrypt · Tailwind.
+Persistencia: Postgres (Supabase, vía `DATABASE_URL`) o, en local, SQLite (`better-sqlite3`) con fallback automático a JSON (`server/data/kikeled-os-fallback.json`).
 
 ## Desarrollo local
 
 ```bash
-npm.cmd run dev
+npm install
+npm run dev        # cliente (Vite) + servidor (tsx watch) en paralelo
 ```
 
-Si Windows bloquea `concurrently`, `tsx`, Vite o `esbuild`, usa el modo preview Express:
+Cliente en `http://localhost:5173`, API en `http://localhost:4000`. Crea el primer usuario admin según la semilla de `server/db.ts` o gestiona usuarios en `/admin/usuarios`. Las credenciales nunca van en este repo.
+
+Si Windows bloquea esbuild/tsx (`spawn EPERM`), existe un modo alterno: `npm run start:direct` (ver `scripts/start-direct.ps1`). Es una solución temporal; el camino oficial es `npm run dev`.
+
+## Build y despliegue
 
 ```bash
-powershell -ExecutionPolicy Bypass -File scripts/start-direct.ps1
+npm run build      # tsc + vite build + build del servidor
+npm start          # sirve dist-server
 ```
 
-Luego abre:
+Deploy actual: Vercel (funciones en `api/` reexportan la app Express) + Supabase Postgres. Variables en `.env.example`: `DATABASE_URL`, `JWT_SECRET` (obligatoria en producción), `KIKELED_APP_URL`, `ENABLE_DEBUG_ROUTES`.
 
-- `http://localhost:4002/`
+## Respaldos y datos
 
-Este modo compila React usando `esbuild.exe` directo, evitando la API de Node que falla con `spawn EPERM` cuando intenta abrir pipes. Luego Express sirve la app real desde `dist-direct`.
+- Cada guardado del estado crea un backup automático en `server/data/backups/` (rotación: 30).
+- Export/import manual completo desde `/admin/configuracion` (solo admin).
+- Migración de encoding (mojibake): `npx tsx scripts/migrate-encoding.ts` (dry-run) y `--apply` para ejecutar. Corre contra el backend activo según `DATABASE_URL`.
 
-Credencial demo admin:
+## Estructura
 
-- Email: `kike@kikeled.com`
-- Password: `KikeledAdmin#2026`
+```
+api/          funciones Vercel (reexportan server/)
+server/       Express: auth, estado, DB (pg/sqlite/json)
+src/app/      rutas y App
+src/pages/    public/ · admin/ · client/
+src/store/    Zustand en slices (auth, crm, sales, operations, billing, inventory, premium, system)
+src/types/    entidades del dominio (fuente de verdad de tipos)
+src/lib/      api client, pricing, utils
+scripts/      migraciones y utilidades
+```
 
-## Nota tecnica
+## Estado del proyecto
 
-El MVP intenta usar SQLite mediante `better-sqlite3` y `app_state`. Si el modulo nativo no coincide con la version de Node, cae automaticamente a `server/data/kikeled-os-fallback.json` para que la app pueda arrancar en local. Prisma queda recomendado para una fase posterior si se quiere normalizar modelos como `Lead`, `Product` y `Quote` en tablas separadas.
+Fase 0 (estabilización) completada: backups, export/import, encoding limpio, reset con confirmación, dashboards unificados. Fase 1 (multi-usuario real: API por entidad, rol ventas, numeración en servidor) es el siguiente paso — ver `ANALISIS_Y_MASTER_PLAN.md` §11.
