@@ -30,14 +30,11 @@ export type QuoteStatus =
 export type OrderStatus =
   | 'pendiente'
   | 'diseño'
-  | 'diseÃ±o'
   | 'corte'
   | 'impresión'
-  | 'impresiÃ³n'
   | 'ensamblaje'
   | 'listo para instalar'
   | 'instalación'
-  | 'instalaciÃ³n'
   | 'entregado'
   | 'cerrado';
 
