@@ -282,10 +282,18 @@ export async function initDatabase() {
 
   const existingUsers = await getUserCount();
   if (existingUsers === 0) {
-    const passwordMap: Record<string, string> = {
-      'kike@kikeled.com': 'KikeledAdmin#2026',
-      'ventas@kikeled.com': 'VentasKikeled#2026',
-    };
+    // La contraseña inicial viene del entorno; nunca se hardcodea en el repo.
+    const seedPassword = process.env.KIKELED_SEED_PASSWORD;
+    if (!seedPassword) {
+      if (process.env.NODE_ENV === 'production') {
+        throw new Error('KIKELED_SEED_PASSWORD es obligatoria para sembrar usuarios en producción.');
+      }
+      console.warn('[seed] KIKELED_SEED_PASSWORD no definida; se usará una contraseña temporal de desarrollo.');
+    }
+    const effectiveSeedPassword = seedPassword ?? `dev-${Math.random().toString(36).slice(2, 10)}`;
+    if (!seedPassword) {
+      console.warn(`[seed] Contraseña temporal para usuarios semilla: ${effectiveSeedPassword}`);
+    }
 
     for (const user of emptyData.users) {
       await insertUser({
@@ -295,7 +303,7 @@ export async function initDatabase() {
         role_id: user.roleId,
         avatar: user.avatar,
         customer_id: user.customerId ?? null,
-        password_hash: bcrypt.hashSync(passwordMap[user.email] ?? 'Kikeled#2026', 10),
+        password_hash: bcrypt.hashSync(effectiveSeedPassword, 10),
       });
     }
   }
