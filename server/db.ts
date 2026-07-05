@@ -30,6 +30,7 @@ type JsonDbState = {
     data: string;
     updated_at: string;
   } | null;
+  counters?: Record<string, number>;
 };
 
 type LocalDb = ReturnType<typeof createJsonFallbackDb>;
@@ -89,6 +90,14 @@ function createJsonFallbackDb() {
         if (sql.includes('SELECT id, email, role_id FROM users WHERE email = ?')) {
           const user = state.users.find((item) => item.email === params[0]);
           return user ? { id: user.id, email: user.email, role_id: user.role_id } : undefined;
+        }
+        if (sql.includes('UPDATE counters SET last_number = last_number + 1')) {
+          const key = `${String(params[0])}:${String(params[1])}`;
+          const counters = state.counters ?? {};
+          counters[key] = (counters[key] ?? 0) + 1;
+          state.counters = counters;
+          writeJsonDb(state);
+          return { last_number: counters[key] };
         }
         if (sql.includes('SELECT data, updated_at FROM app_state WHERE id = 1')) {
           if (!state.appState) return { data: JSON.stringify(emptyData), updated_at: '' };
@@ -171,6 +180,17 @@ function createJsonFallbackDb() {
           writeJsonDb(state);
           return { changes: before - state.users.length };
         }
+        if (sql.includes('INSERT INTO counters')) {
+          const key = `${String(params[0])}:${String(params[1])}`;
+          const counters = state.counters ?? {};
+          if (counters[key] === undefined) {
+            counters[key] = Number(params[2]) || 0;
+            state.counters = counters;
+            writeJsonDb(state);
+            return { changes: 1 };
+          }
+          return { changes: 0 };
+        }
         if (sql.includes('INSERT INTO app_state')) {
           state.appState = {
             data: String(params[0]),
@@ -244,6 +264,13 @@ export async function initDatabase() {
         created_at TEXT NOT NULL
       );
 
+      CREATE TABLE IF NOT EXISTS counters (
+        entity TEXT NOT NULL,
+        year INTEGER NOT NULL,
+        last_number INTEGER NOT NULL,
+        PRIMARY KEY (entity, year)
+      );
+
       CREATE INDEX IF NOT EXISTS users_email_idx ON users (email);
       CREATE INDEX IF NOT EXISTS users_customer_id_idx ON users (customer_id);
     `);
@@ -254,6 +281,8 @@ export async function initDatabase() {
       REVOKE ALL ON TABLE app_state FROM anon, authenticated;
       ALTER TABLE media_assets ENABLE ROW LEVEL SECURITY;
       REVOKE ALL ON TABLE media_assets FROM anon, authenticated;
+      ALTER TABLE counters ENABLE ROW LEVEL SECURITY;
+      REVOKE ALL ON TABLE counters FROM anon, authenticated;
     `);
   } else {
     localDb!.exec(`
@@ -280,6 +309,13 @@ export async function initDatabase() {
         size INTEGER NOT NULL,
         data BYTEA NOT NULL,
         created_at TEXT NOT NULL
+      );
+
+      CREATE TABLE IF NOT EXISTS counters (
+        entity TEXT NOT NULL,
+        year INTEGER NOT NULL,
+        last_number INTEGER NOT NULL,
+        PRIMARY KEY (entity, year)
       );
     `);
   }
@@ -437,6 +473,31 @@ export async function getAppStateData() {
   }
   const row = localDb!.prepare('SELECT data FROM app_state WHERE id = 1').get() as { data: string };
   return row.data;
+}
+
+/**
+ * Devuelve el siguiente número de secuencia para una entidad/año, de forma atómica.
+ * `seedFloor` inicializa el contador (p.ej. con el máximo existente en los datos) solo si no existe.
+ */
+export async function nextCounterValue(entity: string, year: number, seedFloor: number): Promise<number> {
+  if (postgresPool) {
+    await postgresQuery(
+      'INSERT INTO counters (entity, year, last_number) VALUES ($1, $2, $3) ON CONFLICT (entity, year) DO NOTHING',
+      [entity, year, seedFloor],
+    );
+    const result = await postgresQuery<{ last_number: number }>(
+      'UPDATE counters SET last_number = last_number + 1 WHERE entity = $1 AND year = $2 RETURNING last_number',
+      [entity, year],
+    );
+    return Number(result.rows[0].last_number);
+  }
+  localDb!
+    .prepare('INSERT INTO counters (entity, year, last_number) VALUES (?, ?, ?) ON CONFLICT (entity, year) DO NOTHING')
+    .run(entity, year, seedFloor);
+  const row = localDb!
+    .prepare('UPDATE counters SET last_number = last_number + 1 WHERE entity = ? AND year = ? RETURNING last_number')
+    .get(entity, year) as { last_number: number };
+  return Number(row.last_number);
 }
 
 export async function getAppStateMeta() {

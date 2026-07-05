@@ -1,10 +1,11 @@
 import { StateCreator } from 'zustand';
 import { createId } from '../../lib/utils';
 import { AppState } from '../types';
-import { registerActivity, syncAdminState } from '../utils';
+import { nextDocumentNumber, registerActivity, syncAdminState } from '../utils';
 
 export const createOperationsSlice: StateCreator<AppState, [], [], Pick<AppState, 'addOrder' | 'updateOrderStatus' | 'saveOrderTechnicalData' | 'assignMaterialsToOrder'>> = (set, get) => ({
   addOrder: async (order) => {
+    const orderNumber = await nextDocumentNumber('order', get().orders.length + 1);
     set((state) => ({
       ...registerActivity(
         state,
@@ -13,7 +14,7 @@ export const createOperationsSlice: StateCreator<AppState, [], [], Pick<AppState
             {
               ...order,
               id: createId('ord'),
-              number: `KR-${new Date().getFullYear()}-${String(state.orders.length + 1).padStart(3, '0')}`,
+              number: orderNumber,
               createdAt: new Date().toISOString(),
             },
             ...state.orders,

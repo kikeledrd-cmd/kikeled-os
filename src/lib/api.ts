@@ -97,6 +97,15 @@ export async function apiImportAppData(appData: unknown) {
   });
 }
 
+export type DocumentEntity = 'quote' | 'order' | 'invoice';
+
+export async function apiNextDocumentNumber(entity: DocumentEntity) {
+  return request<{ number: string; value: number }>('/api/counters/next', {
+    method: 'POST',
+    body: JSON.stringify({ entity }),
+  });
+}
+
 export async function apiCreateClientRequest(input: Pick<Lead, 'interestType' | 'description' | 'estimatedBudget'>) {
   return request<{ appData: AppData; sessionUser: SessionUser }>('/api/client/requests', {
     method: 'POST',

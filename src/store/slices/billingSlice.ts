@@ -1,10 +1,11 @@
 import { StateCreator } from 'zustand';
 import { createId } from '../../lib/utils';
 import { AppState } from '../types';
-import { registerActivity, syncAdminState } from '../utils';
+import { nextDocumentNumber, registerActivity, syncAdminState } from '../utils';
 
 export const createBillingSlice: StateCreator<AppState, [], [], Pick<AppState, 'addManualInvoice' | 'registerPayment'>> = (set, get) => ({
   addManualInvoice: async (invoice) => {
+    const invoiceNumber = await nextDocumentNumber('invoice', get().invoices.length + 101);
     set((state) => ({
       ...registerActivity(
         state,
@@ -13,7 +14,7 @@ export const createBillingSlice: StateCreator<AppState, [], [], Pick<AppState, '
             {
               ...invoice,
               id: createId('inv'),
-              number: `FAC-${new Date().getFullYear()}-${String(state.invoices.length + 101).padStart(3, '0')}`,
+              number: invoiceNumber,
               balance: invoice.total - invoice.paidAmount,
               status: invoice.paidAmount === 0 ? 'pendiente' : invoice.paidAmount >= invoice.total ? 'pagado' : 'abonado',
             },

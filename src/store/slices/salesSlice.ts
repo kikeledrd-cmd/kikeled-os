@@ -1,12 +1,13 @@
 import { StateCreator } from 'zustand';
 import { createId } from '../../lib/utils';
 import { AppState } from '../types';
-import { buildQuoteTotals, registerActivity, syncAdminState } from '../utils';
+import { buildQuoteTotals, nextDocumentNumber, registerActivity, syncAdminState } from '../utils';
 import { InvoiceItem } from '../../types/entities';
 
 export const createSalesSlice: StateCreator<AppState, [], [], Pick<AppState, 'addQuote' | 'updateQuoteStatus' | 'duplicateQuote' | 'convertQuoteToOrder' | 'createInvoiceFromQuote'>> = (set, get) => ({
   addQuote: async (quote) => {
     const quoteId = createId('quote');
+    const quoteNumber = await nextDocumentNumber('quote', get().quotes.length + 41);
     set((state) => {
       const totals = buildQuoteTotals(quote.items);
       return {
@@ -19,7 +20,7 @@ export const createSalesSlice: StateCreator<AppState, [], [], Pick<AppState, 'ad
                 ...totals,
                 total: totals.total - quote.discount,
                 id: quoteId,
-                number: `COT-${new Date().getFullYear()}-${String(state.quotes.length + 41).padStart(3, '0')}`,
+                number: quoteNumber,
                 version: 1,
                 createdAt: new Date().toISOString(),
               },
@@ -66,6 +67,7 @@ export const createSalesSlice: StateCreator<AppState, [], [], Pick<AppState, 'ad
   },
 
   duplicateQuote: async (quoteId) => {
+    const quoteNumber = await nextDocumentNumber('quote', get().quotes.length + 41);
     set((state) => {
       const quote = state.quotes.find((item) => item.id === quoteId);
       if (!quote) return state;
@@ -74,7 +76,7 @@ export const createSalesSlice: StateCreator<AppState, [], [], Pick<AppState, 'ad
           {
             ...quote,
             id: createId('quote'),
-            number: `COT-${new Date().getFullYear()}-${String(state.quotes.length + 41).padStart(3, '0')}`,
+            number: quoteNumber,
             status: 'borrador',
             version: quote.version + 1,
             createdAt: new Date().toISOString(),
@@ -97,6 +99,7 @@ export const createSalesSlice: StateCreator<AppState, [], [], Pick<AppState, 'ad
   },
 
   convertQuoteToOrder: async (quoteId) => {
+    const orderNumber = await nextDocumentNumber('order', get().orders.length + 1);
     set((state) => {
       const quote = state.quotes.find((item) => item.id === quoteId);
       if (!quote) return state;
@@ -109,7 +112,7 @@ export const createSalesSlice: StateCreator<AppState, [], [], Pick<AppState, 'ad
             orders: [
               {
                 id: createId('ord'),
-                number: `KR-${new Date().getFullYear()}-${String(state.orders.length + 1).padStart(3, '0')}`,
+                number: orderNumber,
                 customerId: quote.customerId,
                 quoteId: quote.id,
                 service: quote.items[0]?.description ?? 'Orden personalizada',
@@ -150,6 +153,7 @@ export const createSalesSlice: StateCreator<AppState, [], [], Pick<AppState, 'ad
   },
 
   createInvoiceFromQuote: async (quoteId) => {
+    const invoiceNumber = await nextDocumentNumber('invoice', get().invoices.length + 101);
     set((state) => {
       const quote = state.quotes.find((item) => item.id === quoteId);
       if (!quote) return state;
@@ -169,7 +173,7 @@ export const createSalesSlice: StateCreator<AppState, [], [], Pick<AppState, 'ad
             invoices: [
               {
                 id: createId('inv'),
-                number: `FAC-${new Date().getFullYear()}-${String(state.invoices.length + 101).padStart(3, '0')}`,
+                number: invoiceNumber,
                 customerId: quote.customerId,
                 quoteId: quote.id,
                 items,

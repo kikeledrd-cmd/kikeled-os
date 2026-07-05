@@ -2,7 +2,7 @@ import { StateCreator } from 'zustand';
 import { apiCreateClientRequest } from '../../lib/api';
 import { createId } from '../../lib/utils';
 import { AppState } from '../types';
-import { buildQuoteTotals, registerActivity, syncAdminState } from '../utils';
+import { buildQuoteTotals, nextDocumentNumber, registerActivity, syncAdminState } from '../utils';
 
 export const createCrmSlice: StateCreator<AppState, [], [], Pick<AppState, 'setSelectedCustomer' | 'setClientPortalCustomer' | 'addLead' | 'updateLeadStatus' | 'convertLeadToCustomer' | 'createQuoteFromLead' | 'addCustomer'>> = (set, get) => ({
   setSelectedCustomer: (customerId) => set({ selectedCustomerId: customerId }),
@@ -112,6 +112,7 @@ export const createCrmSlice: StateCreator<AppState, [], [], Pick<AppState, 'setS
 
   createQuoteFromLead: async (leadId) => {
     let createdQuoteId: string | null = null;
+    const quoteNumber = await nextDocumentNumber('quote', get().quotes.length + 41);
     set((state) => {
       const lead = state.leads.find((item) => item.id === leadId);
       if (!lead) return state;
@@ -177,7 +178,7 @@ export const createCrmSlice: StateCreator<AppState, [], [], Pick<AppState, 'setS
             quotes: [
               {
                 id: quoteId,
-                number: `COT-${new Date().getFullYear()}-${String(state.quotes.length + 41).padStart(3, '0')}`,
+                number: quoteNumber,
                 customerId,
                 leadId,
                 items: quoteItems.items,

@@ -20,6 +20,7 @@ import {
   insertMediaAsset,
   insertUser,
   listUsers,
+  nextCounterValue,
   updateUser,
   type UserRow,
 } from './db.js';
@@ -776,6 +777,39 @@ app.put('/api/app-state', requireAuth, requireAdmin, async (req, res, next) => {
     sessionUser: req.sessionUser,
     stateVersion: version,
   });
+  } catch (error) {
+    next(error);
+  }
+});
+
+const documentCounterConfig = {
+  quote: { prefix: 'COT', collection: 'quotes' },
+  order: { prefix: 'KR', collection: 'orders' },
+  invoice: { prefix: 'FAC', collection: 'invoices' },
+} as const;
+
+app.post('/api/counters/next', requireAuth, requireAdmin, async (req, res, next) => {
+  try {
+    const parsed = z.object({ entity: z.enum(['quote', 'order', 'invoice']) }).safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ message: 'Entidad inválida. Usa quote, order o invoice.' });
+      return;
+    }
+    const { entity } = parsed.data;
+    const config = documentCounterConfig[entity];
+    const year = new Date().getFullYear();
+
+    // Semilla: el mayor número ya usado este año en los datos, para no repetir históricos.
+    const appData = await loadAppData();
+    const items = appData[config.collection] as Array<{ number?: string }>;
+    const pattern = new RegExp(`^${config.prefix}-${year}-(\\d+)$`);
+    const seedFloor = items.reduce((max, item) => {
+      const match = item.number ? pattern.exec(item.number) : null;
+      return match ? Math.max(max, Number(match[1])) : max;
+    }, 0);
+
+    const value = await nextCounterValue(entity, year, seedFloor);
+    res.json({ number: `${config.prefix}-${year}-${String(value).padStart(3, '0')}`, value });
   } catch (error) {
     next(error);
   }

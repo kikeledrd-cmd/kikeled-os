@@ -1,4 +1,4 @@
-import { SessionUser, StateConflictError, apiSaveAppState } from '../lib/api';
+import { DocumentEntity, SessionUser, StateConflictError, apiNextDocumentNumber, apiSaveAppState } from '../lib/api';
 import { createId, sum } from '../lib/utils';
 import { AppData, QuoteItem, Customer, PremiumPlanName, Activity } from '../types/entities';
 import { AppState, AuthStatus } from './types';
@@ -58,6 +58,20 @@ export function buildQuoteTotals(items: Array<Omit<QuoteItem, 'id' | 'total'>>) 
 
 export function premiumFromPlan(name: PremiumPlanName | 'Sin plan'): Customer['premiumLevel'] {
   return name;
+}
+
+/**
+ * Número de documento desde la secuencia del servidor (única e irrepetible).
+ * Si el servidor no responde, cae al esquema local anterior para no bloquear la operación.
+ */
+export async function nextDocumentNumber(entity: DocumentEntity, fallbackSeq: number): Promise<string> {
+  const prefixes: Record<DocumentEntity, string> = { quote: 'COT', order: 'KR', invoice: 'FAC' };
+  try {
+    const response = await apiNextDocumentNumber(entity);
+    return response.number;
+  } catch {
+    return `${prefixes[entity]}-${new Date().getFullYear()}-${String(fallbackSeq).padStart(3, '0')}`;
+  }
 }
 
 export function registerActivity(state: AppState, patch: Partial<AppData>, activity: Activity): Partial<AppData> {
