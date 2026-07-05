@@ -20,7 +20,6 @@ import { OrderDetailPage } from '../pages/admin/OrderDetailPage';
 import { OrderPrintPage } from '../pages/admin/OrderPrintPage';
 import { TechnicalSheetPrintPage } from '../pages/admin/TechnicalSheetPrintPage';
 import { OrdersPage } from '../pages/admin/OrdersPage';
-import { OsDashboardPage } from '../pages/admin/OsDashboardPage';
 import { PremiumPassPage } from '../pages/admin/PremiumPassPage';
 import { PricingEnginePage } from '../pages/admin/PricingEnginePage';
 import { PricingRulesSettingsPage } from '../pages/admin/PricingRulesSettingsPage';
@@ -98,7 +97,7 @@ export default function App() {
       <Route path="/admin/reportes" element={<ProtectedRoute allow={['admin']}><AdminLayout><ReportsPage /></AdminLayout></ProtectedRoute>} />
       <Route path="/admin/usuarios" element={<ProtectedRoute allow={['admin']}><AdminLayout><UsersManagementPage /></AdminLayout></ProtectedRoute>} />
       <Route path="/admin/configuracion" element={<ProtectedRoute allow={['admin']}><AdminLayout><SettingsPage /></AdminLayout></ProtectedRoute>} />
-      <Route path="/os/dashboard" element={<ProtectedRoute allow={['admin', 'sales']}><AdminLayout><OsDashboardPage /></AdminLayout></ProtectedRoute>} />
+      <Route path="/os/dashboard" element={<Navigate to="/admin" replace />} />
 
       <Route path="/portal" element={<ProtectedRoute allow={['client']}><ClientLayout /></ProtectedRoute>}>
         <Route index element={<ClientHomePage />} />
