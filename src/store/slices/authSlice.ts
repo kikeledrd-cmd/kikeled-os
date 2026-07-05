@@ -32,6 +32,7 @@ export const createAuthSlice: StateCreator<AppState, [], [], Pick<AppState, 'ini
       const initialCustomerId = resolveInitialCustomerId(appData, session.sessionUser.customerId);
       set({
         ...appData,
+        stateVersion: app.stateVersion,
         sessionUser: session.sessionUser,
         activeUserId: session.sessionUser.id,
         clientPortalCustomerId: initialCustomerId,
@@ -56,6 +57,7 @@ export const createAuthSlice: StateCreator<AppState, [], [], Pick<AppState, 'ini
       const initialCustomerId = resolveInitialCustomerId(appData, app.sessionUser.customerId);
       set({
         ...appData,
+        stateVersion: app.stateVersion,
         sessionUser: app.sessionUser,
         activeUserId: app.sessionUser.id,
         clientPortalCustomerId: initialCustomerId,

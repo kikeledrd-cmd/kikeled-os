@@ -4,7 +4,7 @@ import { createId } from '../src/lib/utils.js';
 import { normalizeLeadStatus } from '../src/lib/leadStatus.js';
 import { defaultHeroSlides, defaultWebProducts } from '../src/data/webContent.js';
 import type { AppData, Lead } from '../src/types/entities.js';
-import { dataDir, getAppStateData, saveAppStateData } from './db.js';
+import { dataDir, getAppStateData, getAppStateMeta, saveAppStateData } from './db.js';
 import type { SessionUser } from './types.js';
 
 const backupsDir = path.join(dataDir, 'backups');
@@ -33,9 +33,7 @@ async function backupCurrentState() {
   }
 }
 
-export async function loadAppData(): Promise<AppData> {
-  const data = await getAppStateData();
-  const appData = JSON.parse(data) as AppData;
+function normalizeAppData(appData: AppData): AppData {
   return {
     ...appData,
     heroSlides: appData.heroSlides ?? defaultHeroSlides,
@@ -48,9 +46,22 @@ export async function loadAppData(): Promise<AppData> {
   };
 }
 
-export async function saveAppData(appData: AppData) {
+export async function loadAppData(): Promise<AppData> {
+  const data = await getAppStateData();
+  return normalizeAppData(JSON.parse(data) as AppData);
+}
+
+/** Estado + versión (updated_at) para el bloqueo optimista. */
+export async function loadAppState(): Promise<{ appData: AppData; version: string }> {
+  const meta = await getAppStateMeta();
+  return { appData: normalizeAppData(JSON.parse(meta.data) as AppData), version: meta.updatedAt };
+}
+
+export async function saveAppData(appData: AppData): Promise<string> {
   await backupCurrentState();
-  await saveAppStateData(JSON.stringify(appData), new Date().toISOString());
+  const version = new Date().toISOString();
+  await saveAppStateData(JSON.stringify(appData), version);
+  return version;
 }
 
 export function filterAppDataForUser(appData: AppData, sessionUser: SessionUser): AppData {

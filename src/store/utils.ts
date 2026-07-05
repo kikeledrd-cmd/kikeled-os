@@ -1,4 +1,4 @@
-import { SessionUser, apiSaveAppState } from '../lib/api';
+import { SessionUser, StateConflictError, apiSaveAppState } from '../lib/api';
 import { createId, sum } from '../lib/utils';
 import { AppData, QuoteItem, Customer, PremiumPlanName, Activity } from '../types/entities';
 import { AppState, AuthStatus } from './types';
@@ -10,6 +10,7 @@ export const baseUiState = {
   sessionUser: null as SessionUser | null,
   authStatus: 'loading' as AuthStatus,
   authError: null as string | null,
+  stateVersion: null as string | null,
 };
 
 export function extractAppData(state: AppState): AppData {
@@ -69,13 +70,32 @@ export function registerActivity(state: AppState, patch: Partial<AppData>, activ
 export async function syncAdminState(get: () => AppState, set: (partial: Partial<AppState>) => void) {
   const state = get();
   if (state.sessionUser?.roleKind !== 'admin') return;
-  const response = await apiSaveAppState(extractAppData(state));
-  set({
-    ...response.appData,
-    sessionUser: response.sessionUser,
-    activeUserId: response.sessionUser.id,
-    clientPortalCustomerId: response.sessionUser.customerId ?? get().clientPortalCustomerId,
-    authStatus: 'authenticated',
-    authError: null,
-  });
+  try {
+    const response = await apiSaveAppState(extractAppData(state), state.stateVersion);
+    set({
+      ...response.appData,
+      stateVersion: response.stateVersion,
+      sessionUser: response.sessionUser,
+      activeUserId: response.sessionUser.id,
+      clientPortalCustomerId: response.sessionUser.customerId ?? get().clientPortalCustomerId,
+      authStatus: 'authenticated',
+      authError: null,
+    });
+  } catch (error) {
+    if (error instanceof StateConflictError) {
+      // Otro usuario guardó primero: se adopta el estado fresco del servidor y se avisa.
+      set({
+        ...error.payload.appData,
+        stateVersion: error.payload.stateVersion,
+        sessionUser: error.payload.sessionUser,
+        authStatus: 'authenticated',
+        authError: null,
+      });
+      if (typeof window !== 'undefined') {
+        window.alert('Otro usuario guardó cambios mientras trabajabas. Se recargaron los datos: revisa y repite tu última acción si hace falta.');
+      }
+      return;
+    }
+    throw error;
+  }
 }

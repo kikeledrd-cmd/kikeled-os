@@ -41,14 +41,38 @@ export async function apiLogout() {
 }
 
 export async function apiGetAppState() {
-  return request<{ appData: AppData; sessionUser: SessionUser }>('/api/app-state');
+  return request<{ appData: AppData; sessionUser: SessionUser; stateVersion: string }>('/api/app-state');
 }
 
-export async function apiSaveAppState(appData: AppData) {
-  return request<{ ok: boolean; appData: AppData; sessionUser: SessionUser }>('/api/app-state', {
+/** Conflicto de versiones: otro usuario guardó primero. Trae el estado fresco del servidor. */
+export class StateConflictError extends Error {
+  constructor(
+    public payload: { appData: AppData; sessionUser: SessionUser; stateVersion: string },
+    message: string,
+  ) {
+    super(message);
+    this.name = 'StateConflictError';
+  }
+}
+
+export async function apiSaveAppState(appData: AppData, stateVersion: string | null) {
+  const response = await fetch('/api/app-state', {
     method: 'PUT',
-    body: JSON.stringify(appData),
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ appData, stateVersion }),
   });
+
+  if (response.status === 409) {
+    const payload = await response.json();
+    throw new StateConflictError(payload, payload.message ?? 'Otro usuario guardó cambios.');
+  }
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ message: 'Error inesperado.' }));
+    throw new Error(error.message ?? 'Error inesperado.');
+  }
+
+  return response.json() as Promise<{ ok: boolean; appData: AppData; sessionUser: SessionUser; stateVersion: string }>;
 }
 
 export async function apiExportAppData(): Promise<void> {

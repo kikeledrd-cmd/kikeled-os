@@ -23,7 +23,7 @@ import {
   updateUser,
   type UserRow,
 } from './db.js';
-import { createClientLead, createPublicLead, filterAppDataForUser, loadAppData, saveAppData } from './state.js';
+import { createClientLead, createPublicLead, filterAppDataForUser, loadAppData, loadAppState, saveAppData } from './state.js';
 import type { AppData, User } from '../src/types/entities.js';
 import { createId } from '../src/lib/utils.js';
 import { fileURLToPath } from 'url';
@@ -530,15 +530,41 @@ app.get('/api/auth/session', async (req, res, next) => {
 
 app.get('/api/app-state', requireAuth, async (req, res, next) => {
   try {
-  const appData = await loadAppData();
+  const { appData, version } = await loadAppState();
   res.json({
     appData: filterAppDataForUser(appData, req.sessionUser!),
     sessionUser: req.sessionUser,
+    stateVersion: version,
   });
   } catch (error) {
     next(error);
   }
 });
+
+/** Valida que el payload tenga las 22 colecciones como arrays de objetos con id string. */
+function validateAppDataShape(body: unknown): { ok: true; appData: AppData } | { ok: false; message: string } {
+  if (!body || typeof body !== 'object' || Array.isArray(body)) {
+    return { ok: false, message: 'El estado debe ser un objeto.' };
+  }
+  const record = body as Record<string, unknown>;
+  const missing: string[] = [];
+  for (const key of APP_DATA_COLLECTIONS) {
+    const value = record[key];
+    if (!Array.isArray(value)) {
+      missing.push(key);
+      continue;
+    }
+    for (const item of value) {
+      if (!item || typeof item !== 'object' || typeof (item as { id?: unknown }).id !== 'string') {
+        return { ok: false, message: `La colección "${key}" contiene un registro sin id válido.` };
+      }
+    }
+  }
+  if (missing.length > 0) {
+    return { ok: false, message: `Faltan colecciones o no son listas: ${missing.join(', ')}.` };
+  }
+  return { ok: true, appData: record as unknown as AppData };
+}
 
 function requireSystemAdminOnly(req: express.Request, res: express.Response) {
   if (req.sessionUser?.roleKind !== 'admin') {
@@ -716,18 +742,37 @@ app.delete('/api/users/:userId', requireAuth, async (req, res, next) => {
 
 app.put('/api/app-state', requireAuth, requireAdmin, async (req, res, next) => {
   try {
-  const schema = z.custom<AppData>();
-  const parsed = schema.safeParse(req.body);
-  if (!parsed.success) {
-    res.status(400).json({ message: 'Payload inválido.' });
+  const body = req.body as { appData?: unknown; stateVersion?: unknown } | null;
+  if (!body || body.appData === undefined) {
+    res.status(400).json({ message: 'Formato desactualizado. Recarga la página para obtener la versión nueva.' });
     return;
   }
 
-  await saveAppData(parsed.data);
+  const validated = validateAppDataShape(body.appData);
+  if (!validated.ok) {
+    res.status(400).json({ message: `Estado rechazado: ${validated.message}` });
+    return;
+  }
+
+  // Bloqueo optimista: si otro usuario guardó después de que este cliente cargó, se rechaza con el estado fresco.
+  const current = await loadAppState();
+  const clientVersion = typeof body.stateVersion === 'string' ? body.stateVersion : null;
+  if (clientVersion !== null && current.version !== '' && clientVersion !== current.version) {
+    res.status(409).json({
+      message: 'Otro usuario guardó cambios. Se recargaron los datos.',
+      appData: filterAppDataForUser(current.appData, req.sessionUser!),
+      sessionUser: req.sessionUser,
+      stateVersion: current.version,
+    });
+    return;
+  }
+
+  const version = await saveAppData(validated.appData);
   res.json({
     ok: true,
-    appData: parsed.data,
+    appData: filterAppDataForUser(validated.appData, req.sessionUser!),
     sessionUser: req.sessionUser,
+    stateVersion: version,
   });
   } catch (error) {
     next(error);

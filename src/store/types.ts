@@ -29,6 +29,8 @@ export interface AppState extends AppData {
   sessionUser: SessionUser | null;
   authStatus: AuthStatus;
   authError: string | null;
+  /** Versión del estado del servidor (updated_at) para el bloqueo optimista. */
+  stateVersion: string | null;
   
   initialize: () => Promise<void>;
   login: (email: string, password: string) => Promise<SessionUser>;

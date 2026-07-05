@@ -90,6 +90,10 @@ function createJsonFallbackDb() {
           const user = state.users.find((item) => item.email === params[0]);
           return user ? { id: user.id, email: user.email, role_id: user.role_id } : undefined;
         }
+        if (sql.includes('SELECT data, updated_at FROM app_state WHERE id = 1')) {
+          if (!state.appState) return { data: JSON.stringify(emptyData), updated_at: '' };
+          return { data: state.appState.data, updated_at: state.appState.updated_at };
+        }
         if (sql.includes('SELECT data FROM app_state WHERE id = 1')) {
           if (!state.appState) return { data: JSON.stringify(emptyData) };
           return { data: state.appState.data };
@@ -433,6 +437,20 @@ export async function getAppStateData() {
   }
   const row = localDb!.prepare('SELECT data FROM app_state WHERE id = 1').get() as { data: string };
   return row.data;
+}
+
+export async function getAppStateMeta() {
+  if (postgresPool) {
+    const result = await postgresQuery<{ data: string; updated_at: string }>(
+      'SELECT data, updated_at FROM app_state WHERE id = 1',
+    );
+    const row = result.rows[0];
+    return { data: row?.data ?? JSON.stringify(emptyData), updatedAt: row?.updated_at ?? '' };
+  }
+  const row = localDb!.prepare('SELECT data, updated_at FROM app_state WHERE id = 1').get() as
+    | { data: string; updated_at: string }
+    | undefined;
+  return { data: row?.data ?? JSON.stringify(emptyData), updatedAt: row?.updated_at ?? '' };
 }
 
 export async function saveAppStateData(data: string, updatedAt: string) {
