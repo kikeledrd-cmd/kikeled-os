@@ -23,7 +23,7 @@ import {
   updateUser,
   type UserRow,
 } from './db.js';
-import { createClientLead, createPublicLead, filterAppDataForUser, loadAppData, loadAppState, saveAppData } from './state.js';
+import { createClientLead, createPublicLead, filterAppDataForUser, loadAppData, loadAppState, mergeStateForUser, saveAppData } from './state.js';
 import type { AppData, User } from '../src/types/entities.js';
 import { createId } from '../src/lib/utils.js';
 import { fileURLToPath } from 'url';
@@ -767,10 +767,12 @@ app.put('/api/app-state', requireAuth, requireAdmin, async (req, res, next) => {
     return;
   }
 
-  const version = await saveAppData(validated.appData);
+  // Ventas solo escribe colecciones comerciales; users/servicios/precios se preservan del servidor.
+  const merged = mergeStateForUser(current.appData, validated.appData, req.sessionUser!);
+  const version = await saveAppData(merged);
   res.json({
     ok: true,
-    appData: filterAppDataForUser(validated.appData, req.sessionUser!),
+    appData: filterAppDataForUser(merged, req.sessionUser!),
     sessionUser: req.sessionUser,
     stateVersion: version,
   });

@@ -67,9 +67,11 @@ export function registerActivity(state: AppState, patch: Partial<AppData>, activ
   };
 }
 
+/** Sincroniza el estado al servidor. Admin y ventas persisten; el portal cliente no (usa endpoints propios). */
 export async function syncAdminState(get: () => AppState, set: (partial: Partial<AppState>) => void) {
   const state = get();
-  if (state.sessionUser?.roleKind !== 'admin') return;
+  const roleKind = state.sessionUser?.roleKind;
+  if (roleKind !== 'admin' && roleKind !== 'sales') return;
   try {
     const response = await apiSaveAppState(extractAppData(state), state.stateVersion);
     set({

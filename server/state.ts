@@ -64,9 +64,45 @@ export async function saveAppData(appData: AppData): Promise<string> {
   return version;
 }
 
+/** Colecciones que un usuario de ventas puede modificar. El resto siempre se toma del servidor. */
+export const SALES_WRITABLE_COLLECTIONS = [
+  'leads',
+  'customers',
+  'customerNotes',
+  'quotes',
+  'orders',
+  'invoices',
+  'payments',
+  'activities',
+  'attachments',
+] as const satisfies ReadonlyArray<keyof AppData>;
+
+/**
+ * Fusiona el estado entrante según el rol: admin escribe todo;
+ * ventas solo colecciones comerciales (users, servicios, precios y config quedan intactos).
+ */
+export function mergeStateForUser(serverData: AppData, incoming: AppData, sessionUser: SessionUser): AppData {
+  if (sessionUser.roleKind === 'admin') {
+    return incoming;
+  }
+  const merged: AppData = { ...serverData };
+  for (const key of SALES_WRITABLE_COLLECTIONS) {
+    (merged as unknown as Record<string, unknown>)[key] = incoming[key];
+  }
+  return merged;
+}
+
 export function filterAppDataForUser(appData: AppData, sessionUser: SessionUser): AppData {
   if (sessionUser.roleKind === 'admin') {
     return appData;
+  }
+
+  if (sessionUser.roleKind === 'sales') {
+    // Ventas ve todo el negocio; solo se ocultan los demás usuarios del sistema.
+    return {
+      ...appData,
+      users: appData.users.filter((user) => user.id === sessionUser.id),
+    };
   }
 
   const customerId = sessionUser.customerId;
