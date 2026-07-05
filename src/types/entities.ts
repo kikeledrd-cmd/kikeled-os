@@ -360,6 +360,9 @@ export interface Activity {
   leadId?: string;
   type: string;
   description: string;
+  /** Usuario que ejecutó la acción (sesión real). */
+  userId?: string;
+  userName?: string;
   createdAt: string;
 }
 

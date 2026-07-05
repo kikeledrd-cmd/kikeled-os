@@ -75,9 +75,15 @@ export async function nextDocumentNumber(entity: DocumentEntity, fallbackSeq: nu
 }
 
 export function registerActivity(state: AppState, patch: Partial<AppData>, activity: Activity): Partial<AppData> {
+  // Autor real desde la sesión: quién hizo qué queda registrado en toda actividad.
+  const authored: Activity = {
+    ...activity,
+    userId: activity.userId ?? state.sessionUser?.id,
+    userName: activity.userName ?? state.sessionUser?.name,
+  };
   return {
     ...patch,
-    activities: [activity, ...state.activities],
+    activities: [authored, ...state.activities],
   };
 }
 

@@ -78,7 +78,7 @@ export const createOperationsSlice: StateCreator<AppState, [], [], Pick<AppState
                       {
                         id: createId('chg'),
                         createdAt: now,
-                        author: order.owner || 'Kikeled OS',
+                        author: state.sessionUser?.name || order.owner || 'Kikeled OS',
                         note: `Estado cambiado de ${order.status} a ${status}.`,
                       },
                       ...(item.changeLog ?? []),
@@ -124,7 +124,7 @@ export const createOperationsSlice: StateCreator<AppState, [], [], Pick<AppState
                       {
                         id: createId('chg'),
                         createdAt: now,
-                        author: data.technicalSheet.elaboradoPor || order.owner || 'Kikeled OS',
+                        author: data.technicalSheet.elaboradoPor || state.sessionUser?.name || order.owner || 'Kikeled OS',
                         note,
                       },
                       ...(item.changeLog ?? []),
@@ -174,7 +174,7 @@ export const createOperationsSlice: StateCreator<AppState, [], [], Pick<AppState
                       {
                         id: createId('chg'),
                         createdAt: now,
-                        author: order.owner || 'Kikeled OS',
+                        author: state.sessionUser?.name || order.owner || 'Kikeled OS',
                         note: 'Materiales asignados o actualizados.',
                       },
                       ...(item.changeLog ?? []),

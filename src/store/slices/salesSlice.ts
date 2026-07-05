@@ -89,6 +89,8 @@ export const createSalesSlice: StateCreator<AppState, [], [], Pick<AppState, 'ad
             type: 'cotización',
             customerId: quote.customerId,
             description: `Se duplicó la cotización ${quote.number}.`,
+            userId: state.sessionUser?.id,
+            userName: state.sessionUser?.name,
             createdAt: new Date().toISOString(),
           },
           ...state.activities,
