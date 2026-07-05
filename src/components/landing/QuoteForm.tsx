@@ -33,13 +33,15 @@ export function QuoteForm({ selectedProduct = '', compact = false }: { selectedP
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    // Capturar el form ANTES del await: React suelta event.currentTarget tras resolver la promesa.
+    const form = event.currentTarget;
     setStatus('sending');
     setMessage('');
 
     try {
-      const formData = new FormData(event.currentTarget);
+      const formData = new FormData(form);
       await apiCreatePublicLead(formData);
-      event.currentTarget.reset();
+      form.reset();
       setStatus('sent');
       setMessage('Solicitud creada. Ya está guardada como lead en Kikeled OS.');
     } catch (error) {
