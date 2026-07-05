@@ -192,7 +192,8 @@ app.get('/api/health', (_req, res) => {
 });
 
 app.get('/api/debug/auth', async (_req, res, next) => {
-  if (process.env.ENABLE_DEBUG_ROUTES !== 'true') {
+  // Nunca disponible en producción, aunque el flag esté activo.
+  if (process.env.NODE_ENV === 'production' || process.env.ENABLE_DEBUG_ROUTES !== 'true') {
     res.status(404).json({ message: 'No encontrado.' });
     return;
   }
