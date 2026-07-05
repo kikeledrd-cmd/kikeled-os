@@ -47,7 +47,7 @@ const baseDataDir =
   process.env.KIKELED_DB_DIR ??
   (process.env.VERCEL ? path.join('/tmp', 'kikeled-os-data') : path.join(process.cwd(), 'server', 'data'));
 
-const dataDir = baseDataDir;
+export const dataDir = baseDataDir;
 fs.mkdirSync(dataDir, { recursive: true });
 
 const sqlitePath = path.join(dataDir, 'kikeled-os.db');

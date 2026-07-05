@@ -1,9 +1,37 @@
+import fs from 'node:fs';
+import path from 'node:path';
 import { createId } from '../src/lib/utils.js';
 import { normalizeLeadStatus } from '../src/lib/leadStatus.js';
 import { defaultHeroSlides, defaultWebProducts } from '../src/data/webContent.js';
 import type { AppData, Lead } from '../src/types/entities.js';
-import { getAppStateData, saveAppStateData } from './db.js';
+import { dataDir, getAppStateData, saveAppStateData } from './db.js';
 import type { SessionUser } from './types.js';
+
+const backupsDir = path.join(dataDir, 'backups');
+const MAX_BACKUPS = 30;
+
+/**
+ * Copia el estado actual a server/data/backups antes de sobrescribirlo.
+ * Nunca debe tumbar un guardado: cualquier error se registra y se sigue.
+ */
+async function backupCurrentState() {
+  try {
+    const current = await getAppStateData();
+    if (!current) return;
+    fs.mkdirSync(backupsDir, { recursive: true });
+    const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+    fs.writeFileSync(path.join(backupsDir, `app-state-${stamp}.json`), current, 'utf8');
+    const files = fs
+      .readdirSync(backupsDir)
+      .filter((name) => name.startsWith('app-state-') && name.endsWith('.json'))
+      .sort();
+    for (const name of files.slice(0, Math.max(files.length - MAX_BACKUPS, 0))) {
+      fs.unlinkSync(path.join(backupsDir, name));
+    }
+  } catch (error) {
+    console.error('[backup] No se pudo crear el respaldo:', error);
+  }
+}
 
 export async function loadAppData(): Promise<AppData> {
   const data = await getAppStateData();
@@ -21,6 +49,7 @@ export async function loadAppData(): Promise<AppData> {
 }
 
 export async function saveAppData(appData: AppData) {
+  await backupCurrentState();
   await saveAppStateData(JSON.stringify(appData), new Date().toISOString());
 }
 

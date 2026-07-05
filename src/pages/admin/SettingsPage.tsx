@@ -1,13 +1,41 @@
+import { useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { PageHeader } from '../../components/shared/PageHeader';
 import { SectionCard } from '../../components/shared/SectionCard';
+import { apiExportAppData, apiImportAppData } from '../../lib/api';
 import { useAppStore } from '../../store/useAppStore';
 
 export function SettingsPage() {
-  const { roles, users, resetDemo } = useAppStore((state) => state);
+  const { roles, users, resetDemo, initialize } = useAppStore((state) => state);
+  const importInputRef = useRef<HTMLInputElement>(null);
+  const [dataStatus, setDataStatus] = useState('');
+
+  async function handleExport() {
+    setDataStatus('');
+    try {
+      await apiExportAppData();
+      setDataStatus('Exportación descargada.');
+    } catch (error) {
+      setDataStatus(error instanceof Error ? error.message : 'No se pudo exportar.');
+    }
+  }
+
+  async function handleImportFile(file: File) {
+    setDataStatus('');
+    try {
+      const text = await file.text();
+      const parsed = JSON.parse(text) as unknown;
+      await apiImportAppData(parsed);
+      await initialize();
+      setDataStatus('Importación completada. Datos restaurados.');
+    } catch (error) {
+      setDataStatus(error instanceof Error ? error.message : 'No se pudo importar el archivo.');
+    }
+  }
+
   return (
     <div className="space-y-6">
-      <PageHeader eyebrow="Sistema" title="Configuracion" description="Usuarios, roles, precios y reinicio controlado del entorno." />
+      <PageHeader eyebrow="Sistema" title="Configuracion" description="Usuarios, roles, precios, respaldos y reinicio controlado del entorno." />
       <div className="grid gap-6 xl:grid-cols-3">
         <SectionCard title="Usuarios" description="Crea y edita accesos de admin, ventas y clientes.">
           <div className="mb-4 space-y-3">
@@ -29,6 +57,24 @@ export function SettingsPage() {
               </div>
             ))}
           </div>
+        </SectionCard>
+        <SectionCard title="Respaldo de datos" description="Descarga una copia completa o restaura desde un archivo exportado.">
+          <div className="flex flex-wrap gap-3">
+            <button className="btn-secondary" onClick={handleExport}>Exportar datos</button>
+            <button className="btn-secondary" onClick={() => importInputRef.current?.click()}>Importar datos</button>
+            <input
+              ref={importInputRef}
+              type="file"
+              accept="application/json"
+              className="hidden"
+              onChange={(event) => {
+                const file = event.target.files?.[0];
+                event.target.value = '';
+                if (file) void handleImportFile(file);
+              }}
+            />
+          </div>
+          {dataStatus ? <p className="mt-3 text-sm text-soft">{dataStatus}</p> : null}
         </SectionCard>
         <SectionCard title="Datos operativos" description="Restablece la persistencia local si quieres reiniciar pruebas.">
           <button className="btn-primary" onClick={resetDemo}>Dejar sistema en cero</button>

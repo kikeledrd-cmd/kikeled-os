@@ -410,6 +410,62 @@ app.delete('/api/admin/products/:productId', requireAuth, requireAdmin, async (r
   }
 });
 
+const APP_DATA_COLLECTIONS = [
+  'users',
+  'roles',
+  'leads',
+  'customers',
+  'customerNotes',
+  'services',
+  'serviceCategories',
+  'pricingRules',
+  'quotes',
+  'orders',
+  'materials',
+  'inventoryMovements',
+  'orderMaterials',
+  'invoices',
+  'payments',
+  'premiumPlans',
+  'premiumMemberships',
+  'premiumBenefitUsage',
+  'activities',
+  'attachments',
+  'heroSlides',
+  'webProducts',
+] as const;
+
+app.get('/api/admin/export', requireAuth, requireAdmin, async (_req, res, next) => {
+  try {
+    if (!requireSystemAdminOnly(_req, res)) return;
+    const appData = await loadAppData();
+    const stamp = new Date().toISOString().slice(0, 10);
+    res.setHeader('Content-Disposition', `attachment; filename="kikeled-os-export-${stamp}.json"`);
+    res.json(appData);
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post('/api/admin/import', requireAuth, requireAdmin, async (req, res, next) => {
+  try {
+    if (!requireSystemAdminOnly(req, res)) return;
+    const body = req.body as Record<string, unknown> | null;
+    const missing = APP_DATA_COLLECTIONS.filter((key) => !Array.isArray(body?.[key]));
+    if (!body || missing.length > 0) {
+      res.status(400).json({
+        message: `Archivo de importación inválido. Faltan colecciones: ${missing.join(', ') || 'todas'}.`,
+      });
+      return;
+    }
+    // saveAppData respalda el estado actual automáticamente antes de sobrescribir.
+    await saveAppData(body as unknown as AppData);
+    res.json({ ok: true });
+  } catch (error) {
+    next(error);
+  }
+});
+
 app.post('/api/auth/login', authLimiter, async (req, res) => {
   const schema = z.object({
     email: z.string().email(),

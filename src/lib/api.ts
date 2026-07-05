@@ -51,6 +51,28 @@ export async function apiSaveAppState(appData: AppData) {
   });
 }
 
+export async function apiExportAppData(): Promise<void> {
+  const response = await fetch('/api/admin/export', { credentials: 'include' });
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ message: 'No se pudo exportar.' }));
+    throw new Error(error.message ?? 'No se pudo exportar.');
+  }
+  const blob = await response.blob();
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = `kikeled-os-export-${new Date().toISOString().slice(0, 10)}.json`;
+  anchor.click();
+  URL.revokeObjectURL(url);
+}
+
+export async function apiImportAppData(appData: unknown) {
+  return request<{ ok: boolean }>('/api/admin/import', {
+    method: 'POST',
+    body: JSON.stringify(appData),
+  });
+}
+
 export async function apiCreateClientRequest(input: Pick<Lead, 'interestType' | 'description' | 'estimatedBudget'>) {
   return request<{ appData: AppData; sessionUser: SessionUser }>('/api/client/requests', {
     method: 'POST',
