@@ -4,6 +4,8 @@ import { useShallow } from 'zustand/react/shallow';
 import { PageHeader } from '../../components/shared/PageHeader';
 import { SectionCard } from '../../components/shared/SectionCard';
 import { StatusBadge } from '../../components/shared/StatusBadge';
+import { defaultWebProducts } from '../../data/webContent';
+import { selectMissingTemporaryCatalogProducts } from '../../data/temporaryCatalog';
 import { apiUploadFile } from '../../lib/api';
 import { createId, currency } from '../../lib/utils';
 import { useAppStore } from '../../store/useAppStore';
@@ -97,9 +99,11 @@ export function WebContentPage() {
 
   const sortedSlides = useMemo(() => [...heroSlides].sort((a, b) => a.order - b.order), [heroSlides]);
   const sortedProducts = useMemo(() => [...webProducts].sort((a, b) => a.order - b.order), [webProducts]);
+  const missingExamples = useMemo(() => selectMissingTemporaryCatalogProducts(defaultWebProducts, webProducts), [webProducts]);
   const [slide, setSlide] = useState<HeroSlide>(sortedSlides[0] ?? slideDraft());
   const [product, setProduct] = useState<WebProduct>(sortedProducts[0] ?? productDraft());
   const [status, setStatus] = useState('');
+  const [importingExamples, setImportingExamples] = useState(false);
   const [uploadingSlide, setUploadingSlide] = useState<'media' | 'thumbnail' | null>(null);
   const [uploadingProduct, setUploadingProduct] = useState(false);
   const [uploadingGallery, setUploadingGallery] = useState(false);
@@ -154,6 +158,33 @@ export function WebContentPage() {
     await deleteWebProduct(product.id);
     setProduct(productDraft());
     setStatus('Producto eliminado.');
+  }
+
+  async function importCatalogExamples() {
+    if (importingExamples || !missingExamples.length) return;
+    if (useAppStore.getState().sessionUser?.roleKind !== 'admin') {
+      setStatus('Solo el administrador puede importar ejemplos al catálogo.');
+      return;
+    }
+
+    setImportingExamples(true);
+    let imported = 0;
+    try {
+      for (const template of missingExamples) {
+        await upsertWebProduct(template);
+        if (!useAppStore.getState().webProducts.some((item) => item.id === template.id)) {
+          throw new Error('La sincronización no confirmó el último producto. Recarga antes de continuar.');
+        }
+        imported += 1;
+        setStatus(`Importando catálogo de ejemplo: ${imported} de ${missingExamples.length} fichas añadidas…`);
+      }
+      setStatus(`Se añadieron ${imported} ejemplos editables. Revisa fotos y precios antes de mantenerlos publicados.`);
+    } catch (error) {
+      const detail = error instanceof Error ? error.message : 'Error de sincronización.';
+      setStatus(`Se añadieron ${imported} de ${missingExamples.length} ejemplos. ${detail} Recarga el administrador antes de reintentar para recuperar los datos del servidor.`);
+    } finally {
+      setImportingExamples(false);
+    }
   }
 
   async function uploadSlideAsset(event: ChangeEvent<HTMLInputElement>, target: 'media' | 'thumbnail') {
@@ -292,6 +323,13 @@ export function WebContentPage() {
 
         <SectionCard title="Catálogo editable" description="Productos públicos con miniatura, precio base, detalles y estado destacado.">
           <div className="k-content-editor">
+            <div className="rounded-xl border border-cyan-400/20 bg-cyan-400/5 p-3 text-sm text-soft">
+              <p>Catálogo de ejemplo: tipos de letreros y precios temporales que puedes modificar, ocultar o eliminar. Las imágenes son conceptuales.</p>
+              <button className="btn-secondary mt-3" type="button" disabled={importingExamples || missingExamples.length === 0} onClick={() => void importCatalogExamples()}>
+                <PackagePlus size={16} /> {importingExamples ? 'Importando ejemplos…' : missingExamples.length ? `Agregar ${missingExamples.length} ejemplos faltantes` : 'Ejemplos ya incorporados'}
+              </button>
+              {missingExamples.length > 0 && <p className="mt-2 text-xs">La importación publica los ejemplos faltantes sin modificar los productos existentes.</p>}
+            </div>
             <div className="k-content-list">
               {sortedProducts.map((item) => (
                 <button key={item.id} className={item.id === product.id ? 'is-selected' : ''} onClick={() => setProduct(item)} type="button">

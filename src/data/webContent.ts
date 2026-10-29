@@ -1,4 +1,5 @@
 import type { HeroSlide, WebProduct } from '../types/entities.js';
+import { temporaryCatalogAdditions } from './temporaryCatalog.js';
 
 const now = '2026-06-16T00:00:00.000Z';
 
@@ -213,4 +214,5 @@ export const defaultWebProducts: WebProduct[] = [
     createdAt: now,
     updatedAt: now,
   },
+  ...temporaryCatalogAdditions,
 ];
