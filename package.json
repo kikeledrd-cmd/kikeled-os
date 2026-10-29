@@ -9,6 +9,7 @@
     "dev:server": "tsx watch server/index.ts",
     "build": "npm run build:client && npm run build:server",
     "test:chrome": "node --import tsx tests/chrome-edition.test.tsx",
+    "test:drops": "node --import tsx tests/fast-food-drop.test.tsx",
     "build:client": "tsc -b && vite build",
     "build:client:direct": "powershell -ExecutionPolicy Bypass -File scripts/build-direct.ps1 -ClientOnly",
     "build:direct": "powershell -ExecutionPolicy Bypass -File scripts/build-direct.ps1",

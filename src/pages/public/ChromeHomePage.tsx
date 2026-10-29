@@ -79,7 +79,7 @@ export function ChromeHomePage() {
 
       <section className="ce-drop" id="drops" aria-labelledby="ce-drop-title">
         <div className="ce-drop-image" role="img" aria-label="Neón Flex con motivos de hamburguesa y pizza" />
-        <div className="ce-container ce-drop-inner"><div className="ce-drop-copy"><p className="ce-eyebrow"><span /> EDICIÓN ESPECIAL · COLECCIONES</p><h2 id="ce-drop-title">FAST FOOD NEON <em>— DROP 01</em></h2><p>Diseños de neón para hamburgueserías, pizzerías, food trucks y negocios con personalidad. Una colección creada para atraer miradas.</p><a className="ce-button ce-button-amber" href={chromeWhatsAppUrl('la colección Fast Food Neon')} target="_blank" rel="noreferrer">Consultar la colección <ArrowRight size={18} /></a></div></div>
+        <div className="ce-container ce-drop-inner"><div className="ce-drop-copy"><p className="ce-eyebrow"><span /> EDICIÓN ESPECIAL · COLECCIONES</p><h2 id="ce-drop-title">FAST FOOD NEON <em>— DROP 01</em></h2><p>Diseños de neón para hamburgueserías, pizzerías, food trucks y negocios con personalidad. Cuatro colecciones creadas para atraer miradas.</p><div className="ce-drop-landing-actions"><Link className="ce-button ce-button-amber" to="/drops/fast-food-neon">Explorar el drop <ArrowRight size={18} /></Link><a className="ce-button ce-button-outline" href={chromeWhatsAppUrl('la colección Fast Food Neon')} target="_blank" rel="noreferrer">Consultar por WhatsApp</a></div></div></div>
       </section>
 
       <section className="ce-section ce-custom" aria-labelledby="ce-custom-title">

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ArrowRight, Filter, MessageCircle, Search, SlidersHorizontal } from 'lucide-react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useLocation, useSearchParams } from 'react-router-dom';
 import { apiGetPublicProducts } from '../../lib/api';
 import { chromePrice, chromeProductImage, chromeWhatsAppUrl, selectChromeProducts } from '../../lib/chromeCatalog';
 import { defaultWebProducts } from '../../data/webContent';
@@ -10,6 +10,8 @@ export function ChromeCatalogPage() {
   const [products, setProducts] = useState<WebProduct[]>(defaultWebProducts);
   const [loading, setLoading] = useState(true);
   const [searchParams, setSearchParams] = useSearchParams();
+  const location = useLocation();
+  const productReturnUrl = `${location.pathname}${location.search}`;
   const query = searchParams.get('buscar') ?? '';
   const category = searchParams.get('categoria') ?? '';
 
@@ -57,11 +59,11 @@ export function ChromeCatalogPage() {
         {visible.length ? <div className="ce-catalog-grid">
           {visible.map((product) => (
             <article className="ce-product ce-catalog-product" key={product.id}>
-              <Link className="ce-product-image" to={`/catalogo/${product.slug}`} aria-label={`Ver detalles de ${product.name}`}>
+              <Link className="ce-product-image" to={`/catalogo/${product.slug}`} state={{ from: productReturnUrl }} aria-label={`Ver detalles de ${product.name}`}>
                 <img src={chromeProductImage(product)} alt={`Referencia de ${product.name}`} loading="lazy" />
                 <span className="ce-product-category">{product.category}</span>
               </Link>
-              <div className="ce-product-details"><h2><Link to={`/catalogo/${product.slug}`}>{product.name}</Link></h2><p>{product.shortDescription}</p><div className="ce-product-facts">{product.materials?.slice(0, 3).map((material) => <span key={material}>{material}</span>)}</div><strong className="ce-catalog-price">{chromePrice(product)}</strong><div className="ce-catalog-actions"><Link to={`/cotizar?producto=${encodeURIComponent(product.name)}`}>Personalizar <ArrowRight size={16} /></Link><a href={chromeWhatsAppUrl(product.name)} target="_blank" rel="noreferrer"><MessageCircle size={16} /> WhatsApp</a></div></div>
+              <div className="ce-product-details"><h2><Link to={`/catalogo/${product.slug}`} state={{ from: productReturnUrl }}>{product.name}</Link></h2><p>{product.shortDescription}</p><div className="ce-product-facts">{product.materials?.slice(0, 3).map((material) => <span key={material}>{material}</span>)}</div><strong className="ce-catalog-price">{chromePrice(product)}</strong><div className="ce-catalog-actions"><Link to={`/cotizar?producto=${encodeURIComponent(product.name)}`}>Personalizar <ArrowRight size={16} /></Link><a href={chromeWhatsAppUrl(product.name)} target="_blank" rel="noreferrer"><MessageCircle size={16} /> WhatsApp</a></div></div>
             </article>
           ))}
         </div> : <div className="ce-empty-state"><h2>No encontramos productos con esos filtros.</h2><p>Prueba otra categoría o escríbenos para una fabricación personalizada.</p><button type="button" onClick={() => setSearchParams(new URLSearchParams(), { replace: true })}>Limpiar filtros</button></div>}

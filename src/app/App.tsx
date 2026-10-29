@@ -48,6 +48,7 @@ import { ChromePublicLayout } from '../components/layout/ChromePublicLayout';
 import { ChromeHomePage } from '../pages/public/ChromeHomePage';
 import { ChromeCatalogPage } from '../pages/public/ChromeCatalogPage';
 import { ChromeProductPage } from '../pages/public/ChromeProductPage';
+import { FastFoodDropPage } from '../pages/public/FastFoodDropPage';
 
 export default function App() {
   const initialize = useAppStore((state) => state.initialize);
@@ -63,6 +64,7 @@ export default function App() {
           <Route path="/" element={<ChromeHomePage />} />
           <Route path="/catalogo" element={<ChromeCatalogPage />} />
           <Route path="/catalogo/:slug" element={<ChromeProductPage />} />
+          <Route path="/drops/fast-food-neon" element={<FastFoodDropPage />} />
           <Route path="/paquetes/:packageSlug" element={<PackageDetailPage />} />
           <Route path="/servicios" element={<PublicServicesPage />} />
           <Route path="/proyectos" element={<ProjectsPage />} />

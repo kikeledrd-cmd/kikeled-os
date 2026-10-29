@@ -1,13 +1,15 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ArrowLeft, ArrowRight, Check, MessageCircle, Ruler, Sparkles } from 'lucide-react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useLocation, useParams } from 'react-router-dom';
 import { apiGetPublicProducts } from '../../lib/api';
 import { chromePrice, chromeProductGallery, chromeWhatsAppUrl } from '../../lib/chromeCatalog';
+import { fastFoodProductBackUrl } from '../../lib/fastFoodDrop';
 import { defaultWebProducts } from '../../data/webContent';
 import type { WebProduct } from '../../types/entities';
 
 export function ChromeProductPage() {
   const { slug } = useParams();
+  const location = useLocation();
   const [products, setProducts] = useState<WebProduct[]>(defaultWebProducts);
   const [loading, setLoading] = useState(true);
   const [selectedPhoto, setSelectedPhoto] = useState(0);
@@ -30,9 +32,14 @@ export function ChromeProductPage() {
     return <main className="ce-detail-missing ce-container"><p className="ce-section-kicker">CATÁLOGO KIKELED</p><h1>{loading ? 'Cargando ficha del producto…' : 'Producto no disponible'}</h1><p>{loading ? 'Estamos consultando el catálogo actualizado.' : 'Este modelo puede haber cambiado o ya no estar publicado.'}</p><Link className="ce-button ce-button-primary" to="/catalogo">Volver al catálogo <ArrowRight size={18} /></Link></main>;
   }
 
+  const previousPage = location.state?.from;
+  const safePreviousPage = typeof previousPage === 'string' && (previousPage === '/catalogo' || previousPage.startsWith('/catalogo?') || previousPage.startsWith('/drops/fast-food-neon')) ? previousPage : null;
+  const backUrl = safePreviousPage ?? fastFoodProductBackUrl(product);
+  const backToDrop = backUrl.startsWith('/drops/fast-food-neon');
+
   return (
     <main className="ce-detail-page">
-      <div className="ce-container ce-detail-toplink"><Link to="/catalogo"><ArrowLeft size={16} /> Volver al catálogo</Link><span>CATÁLOGO / {product.category.toUpperCase()}</span></div>
+      <div className="ce-container ce-detail-toplink"><Link to={backUrl}><ArrowLeft size={16} /> {backToDrop ? 'Volver a Fast Food Neon' : 'Volver al catálogo'}</Link><span>CATÁLOGO / {product.category.toUpperCase()}</span></div>
       <section className="ce-container ce-detail-grid" aria-label={`Ficha de ${product.name}`}>
         <div className="ce-detail-gallery">
           <div className="ce-detail-main-photo"><img src={photos[selectedPhoto] ?? photos[0]} alt={`Foto o referencia de ${product.name}`} /><span>{product.category}</span></div>

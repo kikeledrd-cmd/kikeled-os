@@ -47,6 +47,7 @@ test('landing showcases signage categories and Fast Food Neon drop', () => {
   for (const label of ['Letreros circulares', 'Letras 3D', 'Neón Flex', 'Cajas de luz', 'FAST FOOD NEON']) {
     assert.match(html, new RegExp(label, 'i'));
   }
+  assert.match(html, /href="\/drops\/fast-food-neon"/);
 });
 
 test('catalogue search and category filter only show matching active products', () => {
