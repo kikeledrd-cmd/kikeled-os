@@ -3,7 +3,6 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 import { ProtectedRoute } from './ProtectedRoute';
 import { AdminLayout } from '../components/layout/AdminLayout';
 import { ClientLayout } from '../components/layout/ClientLayout';
-import { PublicLayout } from '../components/layout/PublicLayout';
 import { AppErrorBoundary } from '../components/shared/AppErrorBoundary';
 import { useAppStore } from '../store/useAppStore';
 import { AdminDashboardPage } from '../pages/admin/AdminDashboardPage';
@@ -41,12 +40,14 @@ import { ClientRequestPage } from '../pages/client/ClientRequestPage';
 import { AboutPage } from '../pages/public/AboutPage';
 import { AccessPage } from '../pages/public/AccessPage';
 import { ContactPage } from '../pages/public/ContactPage';
-import { HomePage } from '../pages/public/HomePage';
 import { PackageDetailPage } from '../pages/public/PackageDetailPage';
 import { ProjectsPage } from '../pages/public/ProjectsPage';
 import { QuotePage } from '../pages/public/QuotePage';
 import { ServicesPage as PublicServicesPage } from '../pages/public/ServicesPage';
-import { CatalogPage } from '../pages/public/CatalogPage';
+import { ChromePublicLayout } from '../components/layout/ChromePublicLayout';
+import { ChromeHomePage } from '../pages/public/ChromeHomePage';
+import { ChromeCatalogPage } from '../pages/public/ChromeCatalogPage';
+import { ChromeProductPage } from '../pages/public/ChromeProductPage';
 
 export default function App() {
   const initialize = useAppStore((state) => state.initialize);
@@ -58,9 +59,10 @@ export default function App() {
   return (
     <AppErrorBoundary>
       <Routes>
-        <Route element={<PublicLayout />}>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/catalogo" element={<CatalogPage />} />
+        <Route element={<ChromePublicLayout />}>
+          <Route path="/" element={<ChromeHomePage />} />
+          <Route path="/catalogo" element={<ChromeCatalogPage />} />
+          <Route path="/catalogo/:slug" element={<ChromeProductPage />} />
           <Route path="/paquetes/:packageSlug" element={<PackageDetailPage />} />
           <Route path="/servicios" element={<PublicServicesPage />} />
           <Route path="/proyectos" element={<ProjectsPage />} />

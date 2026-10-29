@@ -11,10 +11,18 @@ export function QuoteForm({ selectedProduct = '', compact = false }: { selectedP
   const [status, setStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
   const [message, setMessage] = useState('');
   const [products, setProducts] = useState<WebProduct[]>(defaultWebProducts);
+  const [interestType, setInterestType] = useState(selectedProduct);
   const productOptions = useMemo(
-    () => products.filter((product) => product.isActive).map((product) => ({ id: product.id, name: product.name })),
-    [products],
+    () => {
+      const options = products.filter((product) => product.isActive).map((product) => ({ id: product.id, name: product.name }));
+      if (!options.some((option) => option.name === 'Business 360')) options.push({ id: 'business-360', name: 'Business 360' });
+      if (selectedProduct && !options.some((option) => option.name === selectedProduct)) options.push({ id: 'requested-service', name: selectedProduct });
+      return options;
+    },
+    [products, selectedProduct],
   );
+
+  useEffect(() => { setInterestType(selectedProduct); }, [selectedProduct]);
 
   useEffect(() => {
     let active = true;
@@ -42,8 +50,9 @@ export function QuoteForm({ selectedProduct = '', compact = false }: { selectedP
       const formData = new FormData(form);
       await apiCreatePublicLead(formData);
       form.reset();
+      setInterestType('');
       setStatus('sent');
-      setMessage('Solicitud creada. Ya está guardada como lead en Kikeled OS.');
+      setMessage('¡Solicitud recibida! Te contactaremos para confirmar los detalles y preparar una propuesta.');
     } catch (error) {
       setStatus('error');
       setMessage(error instanceof Error ? error.message : 'No se pudo enviar la solicitud.');
@@ -54,7 +63,7 @@ export function QuoteForm({ selectedProduct = '', compact = false }: { selectedP
     <form onSubmit={handleSubmit} className={`k-form-shell ${compact ? 'k-form-compact' : ''}`}>
       <div className="k-form-note">
         <CheckCircle2 size={20} />
-        <p>Envía logo, foto del local o referencia. Esta solicitud entra directo al CRM comercial.</p>
+        <p>Puedes adjuntar tu logo, una foto del local o cualquier imagen de referencia.</p>
       </div>
       <div className="k-form-grid">
         <input name="name" className="field" placeholder="Nombre completo" required />
@@ -68,7 +77,7 @@ export function QuoteForm({ selectedProduct = '', compact = false }: { selectedP
           <option value="" disabled>Tipo de negocio</option>
           {businessTypes.map((type) => <option key={type}>{type}</option>)}
         </select>
-        <select name="interestType" className="field" defaultValue={selectedProduct} required>
+        <select name="interestType" className="field" value={interestType} onChange={(event) => setInterestType(event.target.value)} required>
           <option value="" disabled>Servicio solicitado</option>
           {productOptions.map((product) => <option key={product.id} value={product.name}>{product.name}</option>)}
         </select>
