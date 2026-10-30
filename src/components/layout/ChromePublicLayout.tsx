@@ -51,7 +51,7 @@ export function ChromePublicLayout() {
       <header className="ce-header">
         <div className="ce-container ce-header-inner">
           <Link className="ce-brand" to="/" aria-label="Kikeled Letreros — Inicio" onClick={() => setMobileOpen(false)}>
-            <img src="/brand/kikeled-letreros-logo.png" alt="Kikeled Letreros" />
+            <img src="/brand/kikeled-letreros-logo-horizontal.png" alt="Kikeled Letreros" width="2048" height="682" />
           </Link>
           <nav className={`ce-navigation${mobileOpen ? ' is-open' : ''}`} aria-label="Navegación principal" id="ce-navigation">
             {navigation.map((item) => (
@@ -84,7 +84,7 @@ export function ChromePublicLayout() {
       <footer className="ce-footer">
         <div className="ce-container ce-footer-grid">
           <div className="ce-footer-company">
-            <Link to="/" aria-label="Ir al inicio de Kikeled Letreros"><img src="/brand/kikeled-letreros-logo.png" alt="Kikeled Letreros" /></Link>
+            <Link to="/" aria-label="Ir al inicio de Kikeled Letreros"><img src="/brand/kikeled-letreros-logo-horizontal.png" alt="Kikeled Letreros" width="2048" height="682" loading="lazy" /></Link>
             <p>Ideas que se convierten en presencia. Diseño y fabricación de letreros para negocios que quieren destacar.</p>
             <p className="ce-footer-note">Una marca de Kikeled Studio SRL.</p>
           </div>

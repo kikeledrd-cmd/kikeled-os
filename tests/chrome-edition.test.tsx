@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
@@ -27,9 +28,17 @@ test('chrome edition storefront centers on signage and the official Letreros bra
   const html = renderPublicHome();
   assert.match(html, /LETREROS QUE HACEN/i);
   assert.match(html, /BRILLAR TU NEGOCIO/i);
-  assert.match(html, /\/brand\/kikeled-letreros-logo\.png/);
+  assert.match(html, /\/brand\/kikeled-letreros-logo-horizontal\.png/);
   assert.match(html, /Explorar catálogo/);
   assert.match(html, /Cotizar por WhatsApp/);
+});
+
+test('header and footer display the transparent horizontal Letreros logo', () => {
+  const html = renderPublicHome();
+  assert.equal((html.match(/src="\/brand\/kikeled-letreros-logo-horizontal\.png"/g) ?? []).length, 2);
+  const logo = readFileSync('public/brand/kikeled-letreros-logo-horizontal.png');
+  assert.equal(logo.subarray(1, 4).toString(), 'PNG');
+  assert.equal(logo[25], 6, 'The logo must be RGBA, not an opaque RGB square');
 });
 
 test('public navigation prioritizes the catalogue, projects, offers and optional Business 360', () => {
